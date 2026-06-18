@@ -32,9 +32,17 @@ const register=async(req,res)=>{
 
 
     // create a token for the user
+      const reply={
+        firstName:user.firstName,
+        emailId:user.emailId,
+        _id:user._id
+      };
       const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
       res.cookie('token',token,{maxAge:60*60*1000});
-      res.status(201).send("user registered successfully");
+      res.status(201).json({
+        user:reply,
+        message:"User Registered successfully"
+      });
 
       
 
@@ -67,10 +75,17 @@ const login=async(req,res)=>{
         if(!match){
             throw new Error("Invalid credentials");
         }
-
+      const reply={
+        firstName:user.firstName,
+        emailId:user.emailId,
+        _id:user._id
+      };
       const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
       res.cookie('token',token,{maxAge:60*60*1000});
-      res.status(200).send("User logged in successfully");
+      res.status(200).json({
+        user:reply,
+        message:"Loggedin Successfully"
+      });
 
 
 
