@@ -138,6 +138,11 @@ const runCode = async(req,res)=>{
      res.status(500).send("Internal Server Error "+ err);
    }
 }
+
+module.exports={
+  submitCode,
+  runCode
+}
 //     language_id: 54,
 //     stdin: '2 3',
 //     expected_output: '5',

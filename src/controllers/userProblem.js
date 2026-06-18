@@ -314,7 +314,7 @@ const submittedProblem=async(req,res)=>{
 }
 
 
-module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem}
+module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem}
 
 
 
