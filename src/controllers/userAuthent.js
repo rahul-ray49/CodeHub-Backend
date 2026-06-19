@@ -9,7 +9,7 @@ const Submission=require("../models/submission");
 const register=async(req,res)=>{
     try{
       // validate the data
-
+      console.log(req.body);
       validate(req.body);
 
       const {firstName,emailId,password}=req.body;
