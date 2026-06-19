@@ -94,6 +94,7 @@ const submitCode = async (req,res)=>{
           )
       ){
           req.result.problemSolved.push(problemId);
+          req.result.userScore+=Number(problem.score);
           await req.result.save();
       }
 

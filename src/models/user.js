@@ -36,12 +36,16 @@ const userSchema = new Schema({
             type:Schema.Types.ObjectId,
             ref:'problem'
         }],
-        unique:true
+        default:[]
     },
     password:{
         type:String,
         require:true,
         minLength:8,
+    },
+    userScore:{
+        type:Number,
+        default:0
     }
 },{
     timestamps:true

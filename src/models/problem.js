@@ -20,6 +20,11 @@ const problemSchema = new Schema({
         enum:['array','linkedList','graph','dp'],
         required:true
     },
+    score:{
+        type:Number,
+        required:true,
+        min:1
+    },
     visibleTestCases:[
         {
             input:{

@@ -8,10 +8,13 @@ const Submission=require("../models/submission");
 const createProblem=async(req,res)=>{
 
    const {title,description,difficulty,tags,visibleTestCases,
-    hiddenTestCases,startCode,referenceSolution,problemCreator
+    hiddenTestCases,startCode,referenceSolution,problemCreator,score
    }=req.body;
    try{
-       
+       const numericscore=Number(score);
+       if(isNaN(numericscore)){
+            return res.status(400).send("Invalid Score");
+       }
     for(const {language,completeCode} of referenceSolution){
 
 
@@ -77,12 +80,16 @@ const updateProblem = async(req,res)=>{
     //humne probkem ki id nikali from the request
 
     const {title,description,difficulty,tags,
-    visibleTestCases,hiddenTestCases,startCode,
+    visibleTestCases,hiddenTestCases,startCode,score,
     referenceSolution, problemCreator
    } = req.body;
 
    try{
       
+      const numericscore=Number(score);
+       if(isNaN(numericscore)){
+            return res.status(400).send("Invalid Score");
+       }
 
     if(!id){
       return res.status(400).send("Missing ID Field");
@@ -142,10 +149,6 @@ const updateProblem = async(req,res)=>{
     //agar sara source code sai hai judge0 ne clearance dedi toh problem ko update kar do in database 
 
     res.status(200).send(newProblem);
-
-
-
-
 
    }
    catch(err){
@@ -208,7 +211,7 @@ const getProblemById = async(req,res)=>{
     if(!id)
       return res.status(400).send("ID is Missing");
 
-    const getProblem = await Problem.findById(id).select('_id title description difficulty tags visibleTestCases startCode referenceSolution');
+    const getProblem = await Problem.findById(id).select('_id title description difficulty tags score visibleTestCases startCode referenceSolution');
     //only the following field will be shown while fetching a problem
 
 
@@ -231,7 +234,7 @@ const getAllProblem = async(req,res)=>{
 
   try{
      
-    const getProblem = await Problem.find({}).select('_id title difficulty tags');
+    const getProblem = await Problem.find({}).select('_id title difficulty tags score');
     //only these field will be shown when we will fetch all problems
 
 
@@ -254,7 +257,7 @@ const solvedAllProblembyUser=async(req,res)=>{
 
       const user=await User.findById(userId).populate({
         path:"problemSolved",
-        select:"_id title difficulty tags"
+        select:"_id title difficulty tags score"
       })
       //so basically user model mai problemSolved field mai problem ki id he sirf hogi
       //so ek ek prolem ki id ko lekar database ko call karna is not a good task
