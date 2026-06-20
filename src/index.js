@@ -6,11 +6,11 @@ const User = require('./models/user');
 const cookieParser = require('cookie-parser');
 const cors=require('cors');
 
-
 const authRouter = require('./routes/userAuth');
 const redisClient = require('./config/redis');
 const problemRouter=require("./routes/problemCreator");
 const submitRouter = require('./routes/submit');
+const verifyEmailRouter = require('./routes/verifyEmailRouter');
 
 
 
@@ -25,6 +25,7 @@ app.use(cookieParser());
 
 
 app.use('/user',authRouter);
+app.use('/email',verifyEmailRouter)
 app.use('/problem',problemRouter);
 app.use('/submission',submitRouter);
 

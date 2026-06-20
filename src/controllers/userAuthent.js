@@ -4,7 +4,8 @@ const bcrypt=require('bcrypt');
 const jwt=require('jsonwebtoken');
 const redisClient=require('../config/redis');
 const Submission=require("../models/submission");
-
+const crypto=require("crypto");
+const transporter=require("../utils/sendMail");
 
 const register=async(req,res)=>{
     try{
@@ -15,7 +16,7 @@ const register=async(req,res)=>{
       const {firstName,emailId,password}=req.body;
       
       //request body mein password ko hash karna hai
-
+        const crypto_token = crypto.randomBytes(32).toString('hex');
         req.body.password=await bcrypt.hash(password,10);
         req.body.role="user";
         
@@ -28,23 +29,31 @@ const register=async(req,res)=>{
       
         //create the user in database
 
-        const user=await User.create(req.body);
+        const user=await User.create({...req.body,verificationToken:crypto_token});
 
 
-    // create a token for the user
-      const reply={
-        firstName:user.firstName,
-        emailId:user.emailId,
-        _id:user._id
-      };
-      const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
-      res.cookie('token',token,{maxAge:60*60*1000});
-      res.status(201).json({
-        user:reply,
-        message:"User Registered successfully"
+
+        const verificationLink =`http://localhost:3000/email/verify/${crypto_token}`;
+
+        await transporter.sendMail({
+        from: process.env.EMAIL,
+        to: user.emailId,
+        subject: "Verify Your CodeHub Account",
+        html: `
+        <h2>Welcome to CodeHub 🚀</h2>
+
+        <p>Please verify your account.</p>
+
+        <a href="${verificationLink}">
+            Verify Email
+        </a>
+        `
+    });
+
+     
+        res.status(201).json({
+        message:"Regisatration Successful Please verify your email"
       });
-
-      
 
 
     }
@@ -70,6 +79,12 @@ const login=async(req,res)=>{
         if(!user){
             throw new Error("Invalid credentials");
         }
+
+         if(!user.isVerified){
+            return res.status(401).json({
+            message:"Please verify your email first"
+        });
+}
         const match=await bcrypt.compare(password,user.password);
 
         if(!match){
@@ -135,7 +150,8 @@ const adminRegister=async(req,res)=>{
         req.body.password=await bcrypt.hash(password,10);
         req.body.role="admin";
 
-        const user=await User.create(req.body);
+
+        const user=await User.create({...req.body,verificationToken:null,isVerified:true});
         const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
         res.cookie('token',token,{maxAge:60*60*1000});
         res.status(201).send("Admin registered successfully");

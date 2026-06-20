@@ -31,6 +31,13 @@ const userSchema = new Schema({
         enum:['user','admin'],
         default: 'user'
     },
+    isVerified:{
+         type:Boolean,
+         default:false
+    },
+    verificationToken:{
+         type:String
+    },
     problemSolved:{
         type:[{
             type:Schema.Types.ObjectId,
