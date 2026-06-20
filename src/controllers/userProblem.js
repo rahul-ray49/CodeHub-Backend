@@ -233,8 +233,14 @@ const getProblemById = async(req,res)=>{
 const getAllProblem = async(req,res)=>{
 
   try{
+
+     const page = Number(req.query.page) || 1;
+     const limitVal = Number(req.query.limit) || 5;
+
+    const totalProblems = await Problem.countDocuments();
+
      
-    const getProblem = await Problem.find({}).select('_id title difficulty tags score');
+    const getProblem = await Problem.find({}).select('_id title difficulty tags score').skip((page-1)*limitVal).limit(limitVal);
     //only these field will be shown when we will fetch all problems
 
 
@@ -242,9 +248,15 @@ const getAllProblem = async(req,res)=>{
     return res.status(404).send("Problems are Missing");
 
 
-   res.status(200).send(getProblem);
+   res.status(200).json({
+     currentPage: page,
+     totalPages: Math.ceil(totalProblems/limitVal),
+     totalProblems,
+     getProblem
+   });
   }
   catch(err){
+     console.log("GET ALL PROBLEM ERROR:", err);
     res.status(500).send("Error: "+err);
   }
 }
