@@ -26,9 +26,7 @@ const verifyEmail = async(req,res)=>{
 
         await user.save();
 
-        res.status(200).json({
-            message:"Email Verified Successfully"
-        });
+        res.status(200).redirect( "http://localhost:5173/login");
 
     }
     catch(err){
