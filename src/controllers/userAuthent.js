@@ -10,7 +10,6 @@ const transporter=require("../utils/sendMail");
 const register=async(req,res)=>{
     try{
       // validate the data
-      console.log(req.body);
       validate(req.body);
 
       const {firstName,emailId,password}=req.body;
@@ -76,8 +75,10 @@ const login=async(req,res)=>{
 
         const user=await User.findOne({emailId:emailId});
 
-        if(!user){
-            throw new Error("Invalid credentials");
+         if(!user){
+           return res.status(400).json({
+                 message: "User does not exist"
+               });
         }
 
          if(!user.isVerified){
@@ -87,9 +88,11 @@ const login=async(req,res)=>{
 }
         const match=await bcrypt.compare(password,user.password);
 
-        if(!match){
-            throw new Error("Invalid credentials");
-        }
+         if(!match){
+                  return res.status(400).json({
+                         message: "Invalid credentials"
+                 });
+             }
       const reply={
         firstName:user.firstName,
         emailId:user.emailId,
