@@ -207,13 +207,15 @@ const getProblemById = async(req,res)=>{
 
   const {id} = req.params;
   try{
-     
+
     if(!id)
       return res.status(400).send("ID is Missing");
 
-    const getProblem = await Problem.findById(id).select('_id title description difficulty tags score visibleTestCases startCode referenceSolution');
-    //only the following field will be shown while fetching a problem
-
+    const getProblem = await Problem.findById(id).select('_id title description difficulty tags score visibleTestCases startCode');
+    // NOTE: referenceSolution is intentionally excluded — it contains the
+    // complete answer code for each language. getAllProblem already omits it;
+    // this route was the only place that leaked it to any logged-in user,
+    // which lets a user read the solution before submitting (cheating).
 
 
    if(!getProblem)
