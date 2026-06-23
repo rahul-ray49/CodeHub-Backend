@@ -15,6 +15,9 @@ const createProblem=async(req,res)=>{
        if(isNaN(numericscore)){
             return res.status(400).send("Invalid Score");
        }
+       const count = await Problem.countDocuments();
+       const problemNumber = count + 1;
+
     for(const {language,completeCode} of referenceSolution){
 
 
@@ -61,6 +64,7 @@ const createProblem=async(req,res)=>{
 
     const userProblem=await Problem.create({
         ...req.body,
+        problemNumber,
         problemCreator:req.result._id
     });
 
@@ -210,7 +214,7 @@ const getProblemById = async(req,res)=>{
     if(!id)
       return res.status(400).send("ID is Missing");
 
-    const getProblem = await Problem.findById(id).select('_id title description difficulty tags score visibleTestCases startCode referenceSolution');
+    const getProblem = await Problem.findById(id).select('_id title description difficulty tags score problemNumber visibleTestCases startCode referenceSolution');
     //only the following field will be shown while fetching a problem
 
 
@@ -239,7 +243,7 @@ const getAllProblem = async(req,res)=>{
     const totalProblems = await Problem.countDocuments();
 
      
-    const getProblem = await Problem.find({}).select('_id title difficulty tags score').skip((page-1)*limitVal).limit(limitVal);
+    const getProblem = await Problem.find({}).select('_id title difficulty tags score problemNumber').skip((page-1)*limitVal).limit(limitVal);
     //only these field will be shown when we will fetch all problems
 
 
@@ -268,7 +272,7 @@ const solvedAllProblembyUser=async(req,res)=>{
 
       const user=await User.findById(userId).populate({
         path:"problemSolved",
-        select:"_id title difficulty tags score"
+        select:"_id title difficulty tags score problemNumber"
       })
       //so basically user model mai problemSolved field mai problem ki id he sirf hogi
       //so ek ek prolem ki id ko lekar database ko call karna is not a good task

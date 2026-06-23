@@ -25,6 +25,10 @@ const problemSchema = new Schema({
         required:true,
         min:1
     },
+    problemNumber:{
+       type:Number,
+       default:0
+    },
     visibleTestCases:[
         {
             input:{
