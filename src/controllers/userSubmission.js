@@ -62,14 +62,25 @@ const submitCode = async (req,res)=>{
 
             if(test.status_id==4){
 
-              status = 'error';
-              errorMessage = test.stderr || test.compile_output || "Compilation Error";
-
-            }else{
-
               status = 'wrong';
-              errorMessage = test.stderr || "Wrong Answer";
+              errorMessage = "Wrong Answer";
 
+            }
+            else{
+             if(test.status_id === 6){
+
+              status = "error";
+              errorMessage =
+                  test.compile_output ||
+                  "Compilation Error";
+
+              }
+              else{
+                   status = "error";
+                    errorMessage =
+                        test.stderr ||
+                        test.status?.description;
+              }
             }
           }
       }
@@ -98,12 +109,24 @@ const submitCode = async (req,res)=>{
           await req.result.save();
       }
 
-      res.status(201).send(submittedResult);
+      res.status(201).json({
+        status: submittedResult.status,
+        testCasesPassed: submittedResult.testCasesPassed,
+        testCasesTotal: submittedResult.testCasesTotal,
+        runtime: submittedResult.runtime,
+        memory: submittedResult.memory,
+        errorMessage: submittedResult.errorMessage
+      });
 
     }
     catch(err){
-        res.status(500).send("Error in submission:"+ err);
-    }
+
+     return res.status(500).json({
+      success:false,
+      message:"Please check your code and try again."
+   });
+
+   }
 }
 
 /* 
@@ -238,13 +261,43 @@ const runCode = async(req,res)=>{
 
    const testResult = await submitToken(resultToken);
 
+   const cleanResult = testResult.map((tc) => ({
+    stdin: tc.stdin,
+    expected_output: tc.expected_output,
+    stdout: tc.stdout,
+    status_id: tc.status.id,
+    status: tc.status.description,
+    time: tc.time,
+    memory: tc.memory
+  }));
+
+
+  const passedCases = cleanResult.filter(
+    tc => tc.status_id === 3
+  ).length;
+
+
+
+
+
+
+  res.status(201).send({
+    success: passedCases === cleanResult.length,
+    passedCases,
+    totalCases: cleanResult.length,
+    testCases: cleanResult
+  });
+
+
+
+
    
-  
-   res.status(201).send(testResult);
-      
    }
    catch(err){
-     res.status(500).send("Internal Server Error "+ err);
+     return res.status(500).json({
+      success:false,
+      message:"Please check your code and try again."
+   });
    }
 }
 

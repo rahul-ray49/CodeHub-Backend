@@ -19,13 +19,11 @@ const submitBatch = async (submissions)=>{
 
 const options = {
   method: 'POST',
-  url: 'https://judge0-ce.p.rapidapi.com/submissions/batch',
+  url: 'https://ce.judge0.com/submissions/batch',
   params: {
     base64_encoded: 'false'
   },
   headers: {
-    'x-rapidapi-key': process.env.JUDGE0_APIKEY,
-    'x-rapidapi-host': 'judge0-ce.p.rapidapi.com',
     'Content-Type': 'application/json'
   },
   data: {
@@ -59,15 +57,14 @@ const waiting =async(timer)=>{
 const submitToken=async(resultToken)=>{
   const options = {
     method: 'GET',
-    url: 'https://judge0-ce.p.rapidapi.com/submissions/batch',
+    url: 'https://ce.judge0.com/submissions/batch',
     params: {
       tokens: resultToken.join(","),
       base64_encoded: 'false',
       fields: '*'
     },
     headers: {
-      'x-rapidapi-key': process.env.JUDGE0_APIKEY,
-      'x-rapidapi-host': 'judge0-ce.p.rapidapi.com'
+      
     }
   };
   
