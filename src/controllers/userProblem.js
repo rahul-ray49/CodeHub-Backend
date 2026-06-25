@@ -240,6 +240,7 @@ const getAllProblem = async(req,res)=>{
      const page = Number(req.query.page) || 1;
      const limitVal = Number(req.query.limit) || 5;
 
+
     const totalProblems = await Problem.countDocuments();
 
      
@@ -249,6 +250,54 @@ const getAllProblem = async(req,res)=>{
 
    if(getProblem.length==0)
     return res.status(404).send("Problems are Missing");
+
+
+   res.status(200).json({
+     currentPage: page,
+     totalPages: Math.ceil(totalProblems/limitVal),
+     totalProblems,
+     getProblem
+   });
+  }
+  catch(err){
+     console.log("GET ALL PROBLEM ERROR:", err);
+    res.status(500).send("Error: "+err);
+  }
+}
+
+
+const getAllProblem2 = async(req,res)=>{
+
+  try{
+
+     const page = Number(req.query.page) || 1;
+     const limitVal = Number(req.query.limit) || 5;
+
+     const { difficulty, tag ,search } = req.query;
+
+     const filter = {};
+
+     if (difficulty&&difficulty!=="all") {
+         filter.difficulty = difficulty;
+     }
+
+      if (tag&&tag!=="all") {
+          filter.tags = tag;
+      }
+      if(search){
+        filter.title={
+          $regex:search,
+          $options:"i"
+        }
+      }
+
+
+    const totalProblems = await Problem.countDocuments(filter);
+
+     
+    const getProblem = await Problem.find(filter).select('_id title difficulty tags score problemNumber').skip((page-1)*limitVal).limit(limitVal);
+    //only these field will be shown when we will fetch all problems
+
 
 
    res.status(200).json({
@@ -332,7 +381,7 @@ const submittedProblem=async(req,res)=>{
 }
 
 
-module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem}
+module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem,getAllProblem2}
 
 
 
