@@ -149,7 +149,7 @@ const updateProblem = async(req,res)=>{
         //rahe all the sorce code and all woh correct hai ki test karo
 
 
-    const newProblem = await Problem.findByIdAndUpdate(id , {...req.body}, {runValidators:true, new:true});
+    const newProblem = await Problem.findByIdAndUpdate(id , {...req.body,score:numericscore}, {runValidators:true, new:true});
     //agar sara source code sai hai judge0 ne clearance dedi toh problem ko update kar do in database 
 
     res.status(200).send(newProblem);
