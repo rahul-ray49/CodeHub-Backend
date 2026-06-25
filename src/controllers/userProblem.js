@@ -239,12 +239,21 @@ const getAllProblem = async(req,res)=>{
 
      const page = Number(req.query.page) || 1;
      const limitVal = Number(req.query.limit) || 5;
+     const search = req.query.search;
+     let filter = {};
+
+    if(search){
+    filter.title = {
+        $regex: search,
+        $options: "i"
+    };
+}
 
 
-    const totalProblems = await Problem.countDocuments();
+    const totalProblems = await Problem.countDocuments(filter);
 
      
-    const getProblem = await Problem.find({}).select('_id title difficulty tags score problemNumber').skip((page-1)*limitVal).limit(limitVal);
+    const getProblem = await Problem.find(filter).select('_id title difficulty tags score problemNumber').skip((page-1)*limitVal).limit(limitVal);
     //only these field will be shown when we will fetch all problems
 
 
