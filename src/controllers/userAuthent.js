@@ -51,7 +51,7 @@ const register=async(req,res)=>{
 
      
         res.status(201).json({
-        message:"Regisatration Successful Please verify your email"
+        message:"Registration Successful Please verify your email"
       });
 
 
@@ -150,15 +150,15 @@ const adminRegister=async(req,res)=>{
         //basically admin he new admin ko register karega niormal user admins ko addd nahi karta sakta hai
         validate(req.body);
         const {firstName,emailId,password}=req.body;
-
+     
         req.body.password=await bcrypt.hash(password,10);
         req.body.role="admin";
 
 
         const user=await User.create({...req.body,verificationToken:null,isVerified:true});
-        const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
-        res.cookie('token',token,{maxAge:60*60*1000});
-        res.status(201).send("Admin registered successfully");
+        res.status(201).json({
+            message:"Admin Registered Successfully"
+        });
 
     }
     catch(err){
