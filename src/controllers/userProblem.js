@@ -177,7 +177,7 @@ const deleteProblem=async(req,res)=>{
       //id retrieve karo
 
       try{
-
+       
 
       if(!id)
       return res.status(400).send("ID is Missing");
@@ -187,15 +187,31 @@ const deleteProblem=async(req,res)=>{
     const deletedProblem = await Problem.findByIdAndDelete(id);
     //findIdandDelete basically us problem ko dhundta hai aur agar uss id ki problem hai toh usse delete karke wahi return kar deta hai
 
-    if(!deletedProblem)
-    return res.status(404).send("Problem is Missing");
+      if(!deletedProblem)
+      return res.status(404).send("Problem is Missing");
     //agar object return nahi aaya iska matlab object present he nahi tha 
-      
+
+      const result=await User.updateMany(
+      {},
+      {
+          $pull: {
+              problemSolved: deletedProblem._id
+          }
+      }
+  );
+ 
+  //jo bhi user hai agar unhone problem ko solve kara hai toh unke problemSolved array mai se uss problemId ko hata do
 
     res.status(200).send("successfully Deleted");
       }
       catch(err){
-      res.status(500).send("Error in problem deletion: "+err);
+      console.error("DELETE ERROR:", err);
+      console.error(err.stack);
+
+      return res.status(500).json({
+          success: false,
+          message: err.message,
+      });
 
       }
 
