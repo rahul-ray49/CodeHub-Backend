@@ -328,18 +328,52 @@ const solvedAllProblembyUser=async(req,res)=>{
   try{
       const userId=req.result._id;
 
-      const user=await User.findById(userId).populate({
-        path:"problemSolved",
-        select:"_id title difficulty tags score problemNumber"
-      })
-      //so basically user model mai problemSolved field mai problem ki id he sirf hogi
-      //so ek ek prolem ki id ko lekar database ko call karna is not a good task
-      //so we use populate 
-      //populate basically kya krta hai problemSolved mai jo ids hai unhe 
-      //actual document se replace kar deta hai 
-      // phir select field ke through humne humein jo jo field chahiye usse select kar liya
+      const user = await User.findById(userId).select("problemSolved");
+    //this give those problem with ids equal to those in user.ProblemSolved
 
-      res.status(200).send(user.problemSolved);
+    const{page,limit,search,difficulty,tag}=req.query;
+    const currentPage=Number(page)||1;
+    const pageLimit=Number(limit)||5;
+
+    let filter={};
+
+    filter._id={
+      $in:user.problemSolved
+    }
+
+    if(tag&&tag!=="all"){
+      filter.tags=tag;
+    }
+    if(difficulty&&difficulty!=="all"){
+      filter.difficulty=difficulty;
+    }
+    if(search){
+      filter.title={
+        $regex:search,
+        $options:"i"
+      }
+    }
+    
+    const solvedProblems=await Problem.find(filter).sort({ problemNumber: 1 }).skip((currentPage-1)*pageLimit).limit(pageLimit);
+    const totalSolvedProblems=await Problem.countDocuments(filter);
+
+    const totalPages=Math.ceil(totalSolvedProblems/pageLimit);
+    const totalProblems=await Problem.countDocuments();
+    const netSolvedProblems=  user.problemSolved.length;
+
+    return res.status(200).json({
+    success: true,
+    currentPage: currentPage,
+    totalPages: totalPages,
+    totalSolvedProblems:totalSolvedProblems,
+    solvedProblems:solvedProblems,
+    totalProblems,
+    netSolvedProblems
+});
+
+       
+
+
       
   }
 
