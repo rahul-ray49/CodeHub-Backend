@@ -21,7 +21,7 @@ const options = {
   method: 'POST',
   url: 'https://ce.judge0.com/submissions/batch',
   params: {
-    base64_encoded: 'false'
+    base64_encoded: 'true'
   },
   headers: {
     'Content-Type': 'application/json'
@@ -37,6 +37,7 @@ async function fetchData() {
         return response.data;
     } catch (error) {
         console.error("submit batch error occured"+error);
+        throw error;
     }
 }
 
@@ -60,8 +61,8 @@ const submitToken=async(resultToken)=>{
     url: 'https://ce.judge0.com/submissions/batch',
     params: {
       tokens: resultToken.join(","),
-      base64_encoded: 'false',
-      fields: '*'
+      base64_encoded: 'true',
+      fields:"token,stdin,expected_output,stdout,stderr,compile_output,status_id,status,time,memory"
     },
     headers: {
       
@@ -73,7 +74,9 @@ const submitToken=async(resultToken)=>{
       const response = await axios.request(options);
       return response.data;
     } catch (error) {
-      console.error("submit token error occured"+error);
+       console.log("Status:", error.response?.status);
+        console.log("Data:", error.response?.data);
+        console.log("Message:", error.message);
     }
   }
   
@@ -81,6 +84,7 @@ const submitToken=async(resultToken)=>{
    while(true){
   
    const result =  await fetchData();
+   
   
     const IsResultObtained =  result.submissions.every((r)=>r.status_id>2);
   

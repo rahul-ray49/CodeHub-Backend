@@ -1,8 +1,11 @@
 const Problem = require("../models/problem");
 const Submission = require("../models/submission");
 const {getLanguageById,submitBatch,submitToken} = require("../utils/problemUtility");
+const {decode}=require("../utils/decodeResult");
 
 const submitCode = async (req,res)=>{
+
+  let submittedResult = null;
    
     try{
        const userId = req.result._id;
@@ -20,7 +23,7 @@ const submitCode = async (req,res)=>{
         return res.status(404).send("Problem not found");
 
       // Kya apne submission store kar du pehle....
-      const submittedResult = await Submission.create({
+       submittedResult = await Submission.create({
           userId,
           problemId,
           code,
@@ -120,10 +123,9 @@ const submitCode = async (req,res)=>{
 
     }
     catch(err){
-
      return res.status(500).json({
       success:false,
-      message:"Please check your code and try again."
+      message:"Please check your code and try again.There may be any syntax error ar any unitialised variables present in your code"
    });
 
    }
@@ -236,7 +238,10 @@ const runCode = async(req,res)=>{
       const {code,language} = req.body;
 
      if(!userId||!code||!problemId||!language)
-       return res.status(400).send("Some field missing");
+       return res.status(400).json({
+         success:false,
+         message:"Some  fields Missing"
+      })
 
    //    Fetch the problem from database
       const problem =  await Problem.findById(problemId);
@@ -245,43 +250,111 @@ const runCode = async(req,res)=>{
 
    //    Judge0 code ko submit karna hai
 
-   const languageId = getLanguageById(language);
+      const languageId = getLanguageById(language);
 
-   const submissions = problem.visibleTestCases.map((testcase)=>({
-       source_code:code,
-       language_id: languageId,
-       stdin: testcase.input,
-       expected_output: testcase.output
-   }));
+      const submissions = problem.visibleTestCases.map((testcase)=>({
+          source_code: Buffer.from(code, "utf8").toString("base64"),
+          language_id: languageId,
+          stdin: Buffer.from(testcase.input, "utf8").toString("base64"),
+          expected_output: Buffer.from(testcase.output, "utf8").toString("base64")
+      }));
+      console.log(submissions[0]);
 
 
-   const submitResult = await submitBatch(submissions);
+      const submitResult = await submitBatch(submissions);
    
-   const resultToken = submitResult.map((value)=> value.token);
+      const resultToken = submitResult.map((value)=> value.token);
 
-   const testResult = await submitToken(resultToken);
+      const testResult = await submitToken(resultToken);
+   
 
-   const cleanResult = testResult.map((tc) => ({
-    stdin: tc.stdin,
-    expected_output: tc.expected_output,
-    stdout: tc.stdout,
-    status_id: tc.status.id,
-    status: tc.status.description,
-    time: tc.time,
-    memory: tc.memory
-  }));
+      const decodedResult = testResult.map((tc) => ({
+            ...tc,
 
-
-  const passedCases = cleanResult.filter(
-    tc => tc.status_id === 3
-  ).length;
+            stdout: decode(tc.stdout),
+            stderr: decode(tc.stderr),
+            compile_output: decode(tc.compile_output),
+            stdin: decode(tc.stdin),
+            expected_output: decode(tc.expected_output),
+        }));
+    
 
 
 
+      const cleanResult = decodedResult.map((tc) => ({
+        token: tc.token,
+        stdin: tc.stdin,
+        expected_output: tc.expected_output,
+        stdout: tc.stdout,
+        stderr: tc.stderr,
+        compile_output: tc.compile_output,
+        status_id: tc.status_id,        
+        status: tc.status.description,  
+        time: tc.time,
+        memory: tc.memory
+      }));
+
+
+        const passedCases = cleanResult.filter(
+          tc => tc.status_id === 3
+        ).length;
+        
+        const firstFailedCase = cleanResult.find(
+          tc => tc.status_id !== 3
+      );
+
+      if(firstFailedCase?.status==="Compilation Error"){
+
+      return res.status(200).json({
+
+          success:false,
+          resultType:"Compilation Error",
+          passedCases:0,
+          totalCases:cleanResult.length,
+          compileOutput:firstFailedCase.compile_output,
+          testCases:cleanResult
+
+      });
+
+    }
+
+
+  if(firstFailedCase?.status.startsWith("Runtime Error")){
+
+    return res.status(200).json({
+
+        passedCases:0,
+        totalCases:cleanResult.length,
+        success:false,
+        resultType:"Runtime Error",
+        runtimeOutput:firstFailedCase.stderr,
+        testCases:cleanResult
+
+    });
+
+  }
+  
+
+
+  if(passedCases!==cleanResult.length){
+
+    return res.status(200).json({
+
+        success:false,
+        resultType:"Wrong Answer",
+        passedCases,
+        totalCases:cleanResult.length,
+        testCases:cleanResult
+
+    });
+
+}
 
 
 
-  res.status(201).send({
+
+  res.status(200).send({
+    resultType: "Accepted",
     success: passedCases === cleanResult.length,
     passedCases,
     totalCases: cleanResult.length,
@@ -296,7 +369,7 @@ const runCode = async(req,res)=>{
    catch(err){
      return res.status(500).json({
       success:false,
-      message:"Please check your code and try again."
+      message:"Internal Server Error"
    });
    }
 }
