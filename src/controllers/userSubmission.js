@@ -3,9 +3,11 @@ const Submission = require("../models/submission");
 const {getLanguageById,submitBatch,submitToken} = require("../utils/problemUtility");
 const {decode}=require("../utils/decodeResult");
 
+
+
 const submitCode = async (req,res)=>{
 
-  let submittedResult = null;
+ 
    
     try{
        const userId = req.result._id;
@@ -14,31 +16,37 @@ const submitCode = async (req,res)=>{
        const {code,language} = req.body;
 
       if(!userId||!code||!problemId||!language)
-        return res.status(400).send("Some field missing");
+        return res.status(400).json({
+        success:false,
+        message:"some fields are missing"
+      })
 
       // Fetch the problem from database
        const problem =  await Problem.findById(problemId);
 
        if(!problem)
-        return res.status(404).send("Problem not found");
+        return res.status(404).json({
+         success:false,
+         message:"problem not found"
+      })
 
       // Kya apne submission store kar du pehle....
-       submittedResult = await Submission.create({
+       const submittedResult = await Submission.create({
           userId,
           problemId,
           code,
           language,
-          status:'pending',
+          status:'Pending',
           testCasesTotal:problem.hiddenTestCases.length
       });
 
       const languageId = getLanguageById(language);
 
       const submissions = problem.hiddenTestCases.map((testcase)=>({
-        source_code:code,
+        source_code: Buffer.from(code, "utf8").toString("base64"),
         language_id: languageId,
-        stdin: testcase.input,
-        expected_output: testcase.output
+        stdin:Buffer.from(testcase.input, "utf8").toString("base64"),
+        expected_output:Buffer.from(testcase.output,"utf8").toString("base64")
       }));
 
       const submitResult = await submitBatch(submissions);
@@ -47,85 +55,211 @@ const submitCode = async (req,res)=>{
 
       const testResult = await submitToken(resultToken);
 
-      let testCasesPassed = 0;
-      let runtime = 0;
-      let memory = 0;
-      let status = 'accepted';
-      let errorMessage = null;
 
-      for(const test of testResult){
+      const decodedResult = testResult.map((tc) => ({
+        ...tc,
 
-          if(test.status_id==3){
+        stdout: decode(tc.stdout),
+        stderr: decode(tc.stderr),
+        compile_output: decode(tc.compile_output),
+        stdin: decode(tc.stdin),
+        expected_output: decode(tc.expected_output),
+    }));
+
+
+     const cleanResult = decodedResult.map((tc) => ({
+        token: tc.token,
+        stdin: tc.stdin,
+        expected_output: tc.expected_output,
+        stdout: tc.stdout,
+        stderr: tc.stderr,
+        compile_output: tc.compile_output,
+        status_id: tc.status_id,        
+        status: tc.status.description,  
+        time: tc.time,
+        memory: tc.memory
+      }));
+    
+
+      const passedCases = cleanResult.filter(
+          tc => tc.status_id === 3
+        ).length;
+
+      const firstFailedCase = cleanResult.find(
+          tc => tc.status_id !== 3
+      );
+
+
+       if(firstFailedCase?.status==="Compilation Error"){
+
+        submittedResult.status="Compilation Error";
+        submittedResult.testCasesPassed=0;
+        submittedResult.errorMessage =firstFailedCase.compile_output;
+        submittedResult.runtime =null;
+        submittedResult.memory =null;
+
+        await submittedResult.save();
+
+      return res.status(200).json({
+
+          success:false,
+          resultType:"Compilation Error",
+          passedCases:0,
+          totalCases:cleanResult.length,
+          compileOutput:firstFailedCase.compile_output,
+          testCases:cleanResult
+
+      });
+
+    }
+
+    if(firstFailedCase?.status.startsWith("Runtime Error")){
+
+        submittedResult.status="Runtime Error";
+        submittedResult.testCasesPassed=passedCases;
+        submittedResult.errorMessage =firstFailedCase.stderr;
+        submittedResult.runtime =null;
+        submittedResult.memory =null;
+
+        await submittedResult.save();
+
+      return res.status(200).json({
+
+        passedCases:passedCases,
+        totalCases:cleanResult.length,
+        success:false,
+        resultType:"Runtime Error",
+        runtimeOutput:firstFailedCase.stderr,
+        testCases:cleanResult
+
+    });
+
+  }
+
+
+    if(firstFailedCase?.status === "Time Limit Exceeded"){
+
+
+
+
+        submittedResult.status="Time Limit Exceeded";
+        submittedResult.testCasesPassed=passedCases;
+        submittedResult.errorMessage ="Time Limit Exceeded";
+        submittedResult.runtime =null;
+        submittedResult.memory =null;
+
+        await submittedResult.save();
+
+
+
+
+    return res.status(200).json({
+
+        success: false,
+        resultType: "Time Limit Exceeded",
+        passedCases: passedCases,
+        totalCases: cleanResult.length,
+        testCases: cleanResult
+
+    });
+
+}
+
+
+   if(passedCases!==cleanResult.length){
+
+    let testCasesPassed=0;
+    let runtime=0;
+    let memory=0;
+
+
+    for(const test of cleanResult){
+
+          if(test.status_id===3){
 
              testCasesPassed++;
-             runtime = runtime + parseFloat(test.time);
-             memory = Math.max(memory,test.memory);
+             runtime = runtime +  Number(test.time || 0);
+             memory = Math.max(memory,test.memory||0);
 
-          }else{
-
-            if(test.status_id==4){
-
-              status = 'wrong';
-              errorMessage = "Wrong Answer";
-
-            }
-            else{
-             if(test.status_id === 6){
-
-              status = "error";
-              errorMessage =
-                  test.compile_output ||
-                  "Compilation Error";
-
-              }
-              else{
-                   status = "error";
-                    errorMessage =
-                        test.stderr ||
-                        test.status?.description;
-              }
-            }
           }
-      }
+        }
 
-      submittedResult.status = status;
-      submittedResult.testCasesPassed = testCasesPassed;
-      submittedResult.errorMessage = errorMessage;
-      submittedResult.runtime = runtime;
-      submittedResult.memory = memory;
+        submittedResult.status="Wrong Answer";
+        submittedResult.testCasesPassed=testCasesPassed;
+        submittedResult.errorMessage ="Wrong Answer";
+        submittedResult.runtime =runtime;
+        submittedResult.memory =memory;
 
-      await submittedResult.save();
+        await submittedResult.save();
+
+        return res.status(200).json({
+
+            success:false,
+            resultType:"Wrong Answer",
+            passedCases,
+            totalCases:cleanResult.length,
+            testCases:cleanResult
+
+        });
+
+}
+
+ 
+    let testCasesPassed=0;
+    let runtime=0;
+    let memory=0;
+
+
+     for(const test of cleanResult){
+
+          if(test.status_id===3){
+
+             testCasesPassed++;
+             runtime = runtime +  Number(test.time || 0);
+             memory = Math.max(memory,test.memory||0);
+
+          }
+     }
+
+        submittedResult.status="Accepted";
+        submittedResult.testCasesPassed=testCasesPassed;
+        submittedResult.errorMessage =null;
+        submittedResult.runtime =runtime;
+        submittedResult.memory =memory;
+
+        await submittedResult.save();
+
+        if(!req.result.problemSolved.some(id=>id.toString()===problemId)){
+          req.result.problemSolved.push(problemId);
+          req.result.userScore+=Number(problem.score);
+          await req.result.save();
+
+        }
+
+      
+
+    
 
 
 
       // Problem ko tabhi solved mark karenge jab verdict Accepted ho
       // Aur agar pehle se solved list me present nahi hai
 
-      if(
-          status === "accepted" &&
-          !req.result.problemSolved.some(
-              id => id.toString() === problemId
-          )
-      ){
-          req.result.problemSolved.push(problemId);
-          req.result.userScore+=Number(problem.score);
-          await req.result.save();
-      }
+     
 
-      res.status(201).json({
-        status: submittedResult.status,
-        testCasesPassed: submittedResult.testCasesPassed,
-        testCasesTotal: submittedResult.testCasesTotal,
-        runtime: submittedResult.runtime,
-        memory: submittedResult.memory,
-        errorMessage: submittedResult.errorMessage
+      res.status(200).json({
+        resultType: "Accepted",
+        success:true,
+        passedCases,
+        totalCases: cleanResult.length,
+        testCases: cleanResult
       });
 
     }
     catch(err){
      return res.status(500).json({
       success:false,
-      message:"Please check your code and try again.There may be any syntax error ar any unitialised variables present in your code"
+      message:"Internal server Error"
    });
 
    }
@@ -294,6 +428,8 @@ const runCode = async(req,res)=>{
         memory: tc.memory
       }));
 
+      console.log(cleanResult[0]);
+
 
         const passedCases = cleanResult.filter(
           tc => tc.status_id === 3
@@ -323,7 +459,7 @@ const runCode = async(req,res)=>{
 
     return res.status(200).json({
 
-        passedCases:0,
+        passedCases:passedCases,
         totalCases:cleanResult.length,
         success:false,
         resultType:"Runtime Error",
