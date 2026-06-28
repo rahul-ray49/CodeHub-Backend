@@ -107,7 +107,9 @@ const submitCode = async (req,res)=>{
           passedCases:0,
           totalCases:cleanResult.length,
           compileOutput:firstFailedCase.compile_output,
-          testCases:cleanResult
+          testCases:cleanResult,
+          runtime:null,
+          memory:null
 
       });
 
@@ -130,7 +132,9 @@ const submitCode = async (req,res)=>{
         success:false,
         resultType:"Runtime Error",
         runtimeOutput:firstFailedCase.stderr,
-        testCases:cleanResult
+        testCases:cleanResult,
+        runtime:null,
+        memory:null
 
     });
 
@@ -159,7 +163,9 @@ const submitCode = async (req,res)=>{
         resultType: "Time Limit Exceeded",
         passedCases: passedCases,
         totalCases: cleanResult.length,
-        testCases: cleanResult
+        testCases: cleanResult,
+        runtime:null,
+        memory:null
 
     });
 
@@ -175,7 +181,7 @@ const submitCode = async (req,res)=>{
 
     for(const test of cleanResult){
 
-          if(test.status_id===3){
+          if(test.status_id!==3){
 
              testCasesPassed++;
              runtime = runtime +  Number(test.time || 0);
@@ -197,6 +203,8 @@ const submitCode = async (req,res)=>{
             success:false,
             resultType:"Wrong Answer",
             passedCases,
+            runtime,
+            memory,
             totalCases:cleanResult.length,
             testCases:cleanResult
 
@@ -250,6 +258,8 @@ const submitCode = async (req,res)=>{
       res.status(200).json({
         resultType: "Accepted",
         success:true,
+        runtime,
+        memory,
         passedCases,
         totalCases: cleanResult.length,
         testCases: cleanResult
@@ -392,7 +402,7 @@ const runCode = async(req,res)=>{
           stdin: Buffer.from(testcase.input, "utf8").toString("base64"),
           expected_output: Buffer.from(testcase.output, "utf8").toString("base64")
       }));
-      console.log(submissions[0]);
+      
 
 
       const submitResult = await submitBatch(submissions);
@@ -428,7 +438,7 @@ const runCode = async(req,res)=>{
         memory: tc.memory
       }));
 
-      console.log(cleanResult[0]);
+      
 
 
         const passedCases = cleanResult.filter(
