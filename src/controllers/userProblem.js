@@ -199,6 +199,10 @@ const deleteProblem=async(req,res)=>{
           }
       }
   );
+
+  await Submission.deleteMany({
+      problemId: deletedProblem._id
+  });
  
   //jo bhi user hai agar unhone problem ko solve kara hai toh unke problemSolved array mai se uss problemId ko hata do
 

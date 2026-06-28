@@ -11,6 +11,7 @@ const redisClient = require('./config/redis');
 const problemRouter=require("./routes/problemCreator");
 const submitRouter = require('./routes/submit');
 const verifyEmailRouter = require('./routes/verifyEmailRouter');
+const submissionHistoryRouter=require("./routes/submissionHistory");
 
 
 
@@ -28,6 +29,7 @@ app.use('/user',authRouter);
 app.use('/email',verifyEmailRouter)
 app.use('/problem',problemRouter);
 app.use('/submission',submitRouter);
+app.use('/history',submissionHistoryRouter);
 
 const InitializeConnection=async()=>{
     try{
