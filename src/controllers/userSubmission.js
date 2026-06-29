@@ -181,13 +181,14 @@ const submitCode = async (req,res)=>{
 
     for(const test of cleanResult){
 
-          if(test.status_id!==3){
+          if(test.status_id===3){
 
              testCasesPassed++;
-             runtime = runtime +  Number(test.time || 0);
-             memory = Math.max(memory,test.memory||0);
 
           }
+
+          runtime = runtime +  Number(test.time || 0);
+          memory = Math.max(memory,test.memory||0); 
         }
 
         submittedResult.status="Wrong Answer";

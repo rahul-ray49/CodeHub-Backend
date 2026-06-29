@@ -457,7 +457,7 @@ const submittedProblem=async(req,res)=>{
 
     const problemId=req.params.pid;
     
-    const ans=await Submission.find({userId,problemId});
+    const submissions=await Submission.find({userId,problemId}).sort({createdAt:-1});
     /* 
     so basically humare submission schema mai problem ki submission ka history hai
     usmein problem ki id aur user ki id bhi hogi 
@@ -476,13 +476,24 @@ const submittedProblem=async(req,res)=>{
     
     */
 
-    if(ans.length==0)
-      res.status(200).send("No submission is present");
+    if(submissions.length==0)
+      return res.status(200).json({
+      success:true,
+      message:"No Submission Found",
+      submissions
+    });
 
-    res.status(200).send(ans);
+    res.status(200).json({
+      success:true,
+      message:"Submissions Found",
+      submissions
+    });
   }
   catch(err){
-    res.status(500).send("Internal server error in submittedProblem section");
+    res.status(500).json({
+      success:false,
+      message:"Internal Server Error"
+    });
   }
 }
 
