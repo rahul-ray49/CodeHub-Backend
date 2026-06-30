@@ -64,4 +64,57 @@ const userSubmissionHistory=async(req,res)=>{
 
 }
 
-module.exports={userSubmissionHistory};
+
+const submittedProblemHistory=async(req,res)=>{
+
+      try {
+
+        const userId = req.result._id;
+        const submissionId = req.params.sid;
+        const submission = await Submission.findById(submissionId).select("userId problemId code language status runtime memory testCasesPassed testCasesTotal createdAt");
+       
+        if (!submission) {
+
+            return res.status(404).json({
+                success: false,
+                message: "Submission not found"
+            });
+
+        }
+        
+        if (submission.userId.toString() !== userId.toString()) {
+
+            return res.status(403).json({
+                success: false,
+                message: "Unauthorized Access"
+            });
+
+        }
+
+        return res.status(200).json({
+
+            success: true,
+            message: "Submission fetched successfully.",
+            submission
+
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        return res.status(500).json({
+
+            success: false,
+            message: "Internal Server Error"
+
+        });
+
+    }
+
+}
+
+
+
+
+module.exports={userSubmissionHistory,submittedProblemHistory};
