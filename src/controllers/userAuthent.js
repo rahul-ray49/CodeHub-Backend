@@ -186,12 +186,71 @@ const deleteProfile=async(req,res)=>{
     }
 }
 
+
+
+const getUserProfile=async(req,res)=>{
+
+    
+    try{
+
+        const userId=req.result._id;
+        const user= await User.findById(userId) .select("-password -verificationToken").populate("problemSolved","difficulty");
+        if(!user){
+            return res.status(404).json({
+                success:false,
+                message:"User Not Found"
+            })
+        }
+
+        const solvedProblems=user.problemSolved;
+        let easy=0;
+        let medium=0;
+        let hard=0;
+
+        const totalSolved=solvedProblems.length;
+
+
+        for (const problem of solvedProblems) {
+
+            if (problem.difficulty === "easy") {
+                easy++;
+            }
+            else if (problem.difficulty === "medium") {
+                medium++;
+            }
+            else {
+                hard++;
+            }
+
+        }
+
+      return  res.status(200).json({
+            success:true,
+            message:"Profile Fetched Successfully",
+            user,
+            easy,
+            medium,
+            hard,
+            totalSolved
+        })
+
+    }
+    catch(error){
+        console.error(error);
+        return res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        })
+    }
+}
+
 module.exports={
     register,
     login,
     logout,
     adminRegister,
-    deleteProfile
+    deleteProfile,
+    getUserProfile
 }
 
 
