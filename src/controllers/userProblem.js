@@ -13,7 +13,10 @@ const createProblem=async(req,res)=>{
    try{
        const numericscore=Number(score);
        if(isNaN(numericscore)){
-            return res.status(400).send("Invalid Score");
+            return res.status(400).json({
+              success:false,
+              message:"Invalid Score"
+            });
        }
        const count = await Problem.countDocuments();
        const problemNumber = count + 1;
@@ -49,7 +52,10 @@ const createProblem=async(req,res)=>{
 
         for(const test of testResult){
             if(test.status_id!=3){
-                return res.status(400).send("Error Occured While testing problem");
+                return res.status(400).json({
+                    success:false,
+                    message:"Error Occured While testing problem"
+                });
             }
         }
         //ye for loop ye ensure karta hai ki jo bhi source code humne diya hai
@@ -68,11 +74,18 @@ const createProblem=async(req,res)=>{
         problemCreator:req.result._id
     });
 
-    res.status(201).send("problem Saved SuccessFully");
+    res.status(201).json({
+        success:true,
+        message:"problem Saved SuccessFully"
+    });
    
    }
    catch(err){
-       res.status(400).send("Error occured While solving th problem"+err);
+       console.error(err);
+       return res.status(500).json({
+           success:false,
+           message:"Internal Server Error"
+       });
    }
 
 }
@@ -92,18 +105,27 @@ const updateProblem = async(req,res)=>{
       
       const numericscore=Number(score);
        if(isNaN(numericscore)){
-            return res.status(400).send("Invalid Score");
+            return res.status(400).json({
+              success:false,
+              message:"Invalid Score"
+            })
        }
 
     if(!id){
-      return res.status(400).send("Missing ID Field");
+      return res.status(400).json({
+        success:false,
+        message:"Missing ID Field"
+      });
      }
      //agar id nahi aayi toh error response bhejo
 
     const DsaProblem =  await Problem.findById(id);
     if(!DsaProblem)
     {
-    return res.status(404).send("problem with such ID is not persent in server");
+    return res.status(404).json({
+        success:false,
+        message:"problem with such ID is not present in server"
+    });
     }
     //agar id bheji gayi hai toh toh uss id ke related problem ko retrieve 
     //from the database agar aisi koi entry nahi hai toh error response bhejo
@@ -140,7 +162,10 @@ const updateProblem = async(req,res)=>{
     
          for(const test of testResult){
           if(test.status_id!=3){
-           return res.status(400).send("Error Occured while Testing testcases");
+           return res.status(400).json({
+             success:false,
+             message:"Error Occured while Testing testcases please check your source code and testcases"
+           });
           }
          }
     
@@ -152,21 +177,20 @@ const updateProblem = async(req,res)=>{
     const newProblem = await Problem.findByIdAndUpdate(id , {...req.body,score:numericscore}, {runValidators:true, new:true});
     //agar sara source code sai hai judge0 ne clearance dedi toh problem ko update kar do in database 
 
-    res.status(200).send(newProblem);
+    res.status(200).json({
+        success:true,
+        message:"Problem Updated Successfully",
+        data:newProblem
+    });
 
    }
    catch(err){
-      res.status(500).send("Error in create Problem:"+err);
+      res.status(500).json({
+          success:false,
+          message:"Internal Server Error"
+      });
 
    }
-
-
-
-
-
-
-
-
 
 }
 
@@ -180,7 +204,10 @@ const deleteProblem=async(req,res)=>{
        
 
       if(!id)
-      return res.status(400).send("ID is Missing");
+      return res.status(400).json({
+          success:false,
+          message:"Problem is Missing"
+      });
       //checks whether id is being provided or not
       
 
@@ -188,7 +215,10 @@ const deleteProblem=async(req,res)=>{
     //findIdandDelete basically us problem ko dhundta hai aur agar uss id ki problem hai toh usse delete karke wahi return kar deta hai
 
       if(!deletedProblem)
-      return res.status(404).send("Problem is Missing");
+      return res.status(404).json({
+          success:false,
+          message:"Problem is Missing"
+      });
     //agar object return nahi aaya iska matlab object present he nahi tha 
 
       const result=await User.updateMany(
@@ -206,7 +236,10 @@ const deleteProblem=async(req,res)=>{
  
   //jo bhi user hai agar unhone problem ko solve kara hai toh unke problemSolved array mai se uss problemId ko hata do
 
-    res.status(200).send("successfully Deleted");
+    return res.status(200).json({
+        success:true,
+        message:"Problem Deleted Successfully"
+    });
       }
       catch(err){
       console.error("DELETE ERROR:", err);
@@ -214,7 +247,7 @@ const deleteProblem=async(req,res)=>{
 
       return res.status(500).json({
           success: false,
-          message: err.message,
+          message:"Internal Server Error",
       });
 
       }
@@ -232,7 +265,10 @@ const getProblemById = async(req,res)=>{
   try{
      
     if(!id)
-      return res.status(400).send("ID is Missing");
+      return res.status(400).json({
+          success:false,
+          message:"Problem is Missing"
+      });
 
     const getProblem = await Problem.findById(id).select('_id title description difficulty tags score problemNumber visibleTestCases startCode referenceSolution');
     //only the following field will be shown while fetching a problem
@@ -240,13 +276,22 @@ const getProblemById = async(req,res)=>{
 
 
    if(!getProblem)
-    return res.status(404).send("Problem is Missing");
+    return res.status(404).json({
+        success:false,
+        message:"Problem is Missing"
+    });
 
 
-   res.status(200).send(getProblem);
+    return res.status(200).json({
+       success:true,
+       problem:getProblem
+   });
   }
   catch(err){
-    res.status(500).send("Error: "+err);
+    return res.status(500).json({
+        success:false,
+        message:"Internal Server Error"
+    });
   }
 }
 
@@ -289,7 +334,7 @@ const getAllProblem = async(req,res)=>{
 
 
 
-   res.status(200).json({
+   return res.status(200).json({
      currentPage: page,
      totalPages: Math.ceil(totalProblems/limitVal),
      totalProblems,
@@ -298,7 +343,10 @@ const getAllProblem = async(req,res)=>{
   }
   catch(err){
      console.log("GET ALL PROBLEM ERROR:", err);
-    res.status(500).send("Error: "+err);
+    return res.status(500).json({
+        success:false,
+        message:"Internal Server Error"
+    });
   }
 
 
@@ -341,7 +389,8 @@ const getAllProblem2 = async(req,res)=>{
 
 
 
-   res.status(200).json({
+   return res.status(200).json({
+     success:true,
      currentPage: page,
      totalPages: Math.ceil(totalProblems/limitVal),
      totalProblems,
@@ -350,7 +399,10 @@ const getAllProblem2 = async(req,res)=>{
   }
   catch(err){
      console.log("GET ALL PROBLEM ERROR:", err);
-    res.status(500).send("Error: "+err);
+     return res.status(500).json({
+        success:false,
+        message:"Internal Server Error"
+    });
   }
 }
 
@@ -361,12 +413,16 @@ const solvedAllProblemByUser2=async(req,res)=>{
 
     const user=await User.findById({_id:req.result._id}).select("problemSolved");
     if(!user){
-      return res.status(400).send("user not found");
+      return res.status(400).json({
+        success:false,
+        message:"User Not Found"
+      });
     }
     
     const solvedProblemsIds=user.problemSolved;
 
-    res.status(200).json({
+    return res.status(200).json({
+      success:true,
       solvedProblemsIds
     })
 
@@ -378,7 +434,7 @@ const solvedAllProblemByUser2=async(req,res)=>{
   }
   catch(error){
     console.log(error);
-    res.status(400).json({
+    return res.status(500).json({
       success:false,
       message:"problem occured while fetching solved problems by user"
     })
@@ -393,6 +449,13 @@ const solvedAllProblembyUser=async(req,res)=>{
 
       const user = await User.findById(userId).select("problemSolved");
     //this give those problem with ids equal to those in user.ProblemSolved
+
+      if(!user){
+        return res.status(404).json({
+          success:false,
+          message:"User Not Found"
+        });
+      }
 
     const{page,limit,search,difficulty,tag}=req.query;
     const currentPage=Number(page)||1;
@@ -441,7 +504,10 @@ const solvedAllProblembyUser=async(req,res)=>{
   }
 
   catch(err){
-       res.status(500).send("Server Error in solvedAllProblemByUser section");
+       return res.status(500).json({
+         success:false,
+         message:"Internal Server Error "
+       });
 
   }
 
@@ -458,6 +524,8 @@ const submittedProblem=async(req,res)=>{
     const problemId=req.params.pid;
     
     const submissions=await Submission.find({userId,problemId}).sort({createdAt:-1});
+
+
     /* 
     so basically humare submission schema mai problem ki submission ka history hai
     usmein problem ki id aur user ki id bhi hogi 
@@ -483,14 +551,14 @@ const submittedProblem=async(req,res)=>{
       submissions
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success:true,
       message:"Submissions Found",
       submissions
     });
   }
   catch(err){
-    res.status(500).json({
+    return res.status(500).json({
       success:false,
       message:"Internal Server Error"
     });

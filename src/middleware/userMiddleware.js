@@ -10,7 +10,10 @@ const userMiddleware=async(req,res,next)=>{
         
        
         if(!token){
-            throw new Error("Token not present , userMiddleware");
+           return res.status(401).json({
+                success:false,
+                message:"Token not found"
+           });
         }
         //check agar kuch valid token hai ki nahi
 
@@ -27,13 +30,19 @@ const userMiddleware=async(req,res,next)=>{
 
 
         if(!_id){
-            throw new Error("Invalid token, userMiddleware");
+            return res.status(401).json({
+                success:false,
+                message:"Invalid token"
+           }); 
         }
 
         const result=await User.findOne({_id});
 
         if(!result){
-            throw new Error("User not found, userMiddleware");
+            return res.status(401).json({
+                success:false,
+                message:"User not found"
+            });
         }
 
 
@@ -44,7 +53,10 @@ const userMiddleware=async(req,res,next)=>{
 
 
         if(IsBlocked){
-            throw new Error("Token is blocked, userMiddleware");
+            return res.status(401).json({
+                success:false,
+                message:"Token is blocked, userMiddleware"
+            });
         }
 
 
@@ -61,7 +73,19 @@ const userMiddleware=async(req,res,next)=>{
 
     }
     catch(err){
-        res.status(400).send("userMiddleware,message:"+err.message);
+
+            console.error(err);
+         if(err.name==="JsonWebTokenError" || err.name==="TokenExpiredError"){
+        return res.status(401).json({
+            success:false,
+            message:"Invalid or expired token"
+        });
+    }
+        
+        res.status(500).json({
+            success:false,
+            message:"Internal server error"
+        });
     }
 }
 

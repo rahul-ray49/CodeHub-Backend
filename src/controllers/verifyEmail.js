@@ -11,14 +11,18 @@ const verifyEmail = async(req,res)=>{
         });
 
         if(!user){
-            throw new Error("Invalid token");
+           return res.status(400).json({
+            success:false,
+            message:"Invalid token"
+           });
         }
 
         if(user.isVerified){
          return res.status(200).json({
-         message:"Email already verified"
-      });
-     }
+            success:true,
+            message:"Email already verified"
+         });
+        }
 
 
         user.isVerified = true;
@@ -31,8 +35,9 @@ const verifyEmail = async(req,res)=>{
     }
     catch(err){
 
-        res.status(400).json({
-            message: err.message
+        res.status(500).json({
+            success:false,
+            message:"Internal server error"
         });
 
     }

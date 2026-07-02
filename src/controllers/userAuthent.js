@@ -22,7 +22,14 @@ const register=async(req,res)=>{
         
         //by default role user rakh denge jab bhi koi register karega
         //agar admin create karna hai toh uske liye alag se ek route bana denge jisme admin hi access kar sakta hai aur us route me role ko admin set kar denge
+        const existingUser = await User.findOne({ emailId });
 
+        if(existingUser){
+            return res.status(409).json({
+                success:false,
+                message:"Email already registered"
+            });
+        }
 
 
       
@@ -51,13 +58,26 @@ const register=async(req,res)=>{
 
      
         res.status(201).json({
-        message:"Registration Successful Please verify your email"
+            success:true,
+            message:"Registration Successful Please verify your email"
       });
 
 
     }
     catch(err){
-        res.status(400).send("message:"+err.message);
+        console.error(err);
+
+        if(err.message === "Missing mandatory fields" || err.message === "Invalid email format" || err.message === "Password should be strong"){
+         return res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+
+        return res.status(500).json({
+            success:false,
+            message:"Registration Failed"
+        });
     }
 }
 
@@ -67,22 +87,30 @@ const login=async(req,res)=>{
         const {emailId,password}=req.body;
 
         if(!emailId){
-            throw new Error("Invalid credentials");
+           return res.status(400).json({
+                success:false,
+                message: "Invalid credentials"
+            });
         }
         if(!password){
-            throw new Error("Invalid credentials");
+            return res.status(400).json({
+                success:false,
+                message: "Invalid credentials"
+            });
         }
 
         const user=await User.findOne({emailId:emailId});
 
          if(!user){
            return res.status(400).json({
+                 success:false,
                  message: "User does not exist"
                });
         }
 
          if(!user.isVerified){
             return res.status(401).json({
+            success:false,
             message:"Please verify your email first"
         });
 }
@@ -90,7 +118,8 @@ const login=async(req,res)=>{
 
          if(!match){
                   return res.status(400).json({
-                         message: "Invalid credentials"
+                    success:false,
+                    message: "Invalid credentials"
                  });
              }
       const reply={
@@ -101,7 +130,10 @@ const login=async(req,res)=>{
       };
       const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
       res.cookie('token',token,{maxAge:60*60*1000});
-      res.status(200).json({
+
+
+      return res.status(200).json({
+        success:true,
         user:reply,
         message:"Loggedin Successfully"
       });
@@ -110,14 +142,38 @@ const login=async(req,res)=>{
 
     }
     catch(err){
-        res.status(400).send("message:"+err.message);
+
+        console.error(err);
+
+        return res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        });
     }
 }
 
 const logout=async(req,res)=>{
     try{
       const {token}=req.cookies;
+
+
+      if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: "Token not found"
+        });
+    }
+
+
+
       const payload=jwt.decode(token);
+
+      if (!payload) {
+        return res.status(401).json({
+            success: false,
+            message: "Invalid token"
+        });
+    }
 
 
       await redisClient.set(`token:${token}`,"blocked");
@@ -127,15 +183,21 @@ const logout=async(req,res)=>{
       
 
       res.cookie("token",null,{expires: new Date(Date.now())});
-      res.send("User logged out successfully");
+      
 
 
-
+      return res.status(200).json({
+        success:true,
+        message:"Logged out Successfully"
+      });
 
 
     }
     catch(err){
-        res.status(503).send("message:"+err.message);
+       return res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        });
     }
 
 }
@@ -155,14 +217,36 @@ const adminRegister=async(req,res)=>{
         req.body.role="admin";
 
 
+        const existingUser = await User.findOne({ emailId });
+
+        if(existingUser){
+            return res.status(409).json({
+                success:false,
+                message:"Email already registered"
+            });
+        }
+
+
         const user=await User.create({...req.body,verificationToken:null,isVerified:true});
         res.status(201).json({
+            success:true,
             message:"Admin Registered Successfully"
         });
 
     }
     catch(err){
-        res.status(400).send("message:"+err.message);
+        console.error(err);
+
+        if(err.message === "Missing mandatory fields" || err.message === "Invalid email format" || err.message === "Password should be strong"){
+         return res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+        return res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        });
     }
 }
 
@@ -179,10 +263,16 @@ const deleteProfile=async(req,res)=>{
         //await Submission.deleteMany({userId});
         //iska alternate tarika bhi hai.
 
-        res.status(200).send("User Deleted Successfully"); 
+       return  res.status(200).json({
+            success:true,
+            message:"User Deleted Successfully"
+        }); 
     }
     catch(err){
-        res.status(500).send("Internal Server Error");
+       return  res.status(500).json({
+            success:false,
+            message:"Internal Server Error"
+        })
     }
 }
 

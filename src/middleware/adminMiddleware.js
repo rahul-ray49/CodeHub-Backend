@@ -10,7 +10,10 @@ const adminMiddleware=async(req,res,next)=>{
 
 
         if(!token){
-            throw new Error("Token is not present,adminMiddleware");        
+           return res.status(401).json({
+                success:false,
+                message:"Token not found"
+           });       
         }
         
         const payload=jwt.verify(token,process.env.JWT_SECRET);
@@ -18,17 +21,26 @@ const adminMiddleware=async(req,res,next)=>{
         const {_id}=payload;
 
         if(!_id){
-            throw new Error("Invalid token,adminMiddleware");
+           return res.status(401).json({
+                success:false,
+                message:"Invalid token"
+           });       
         }
 
         const result=await User.findById(_id);
 
-        if(payload.role!="admin"){
-            throw new Error("Invalid token");
+        if(payload.role!=="admin"){
+           return res.status(403).json({
+                success:false,
+                message:"Access denied, you are not an admin"
+           });       
         }
 
         if(!result){
-            throw new Error("User doesn't exist,adminMiddleware");
+            return res.status(401).json({
+                success:false,
+                message:"User doesn't exist,adminMiddleware"
+            });
         }
 
         
@@ -38,7 +50,10 @@ const adminMiddleware=async(req,res,next)=>{
 
         
         if(IsBlocked){
-            throw new Error("Invalid token,adminMiddleware");
+            return res.status(401).json({
+                success:false,
+                message:"Invalid token,adminMiddleware"
+            });
         }
 
         req.result=result;
@@ -53,7 +68,20 @@ const adminMiddleware=async(req,res,next)=>{
 
     }
     catch(err){
-        res.status(401).send("Admin Middleware message:"+err.message);
+
+            console.error(err);
+
+           if(err.name==="JsonWebTokenError" || err.name==="TokenExpiredError"){
+        return res.status(401).json({
+            success:false,
+            message:"Invalid or expired token"
+        });
+    }
+
+        res.status(500).json({
+            success:false,
+            message:"Internal server error"
+        });
 
     }
 
