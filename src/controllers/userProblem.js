@@ -222,11 +222,14 @@ const deleteProblem=async(req,res)=>{
     //agar object return nahi aaya iska matlab object present he nahi tha 
 
       const result=await User.updateMany(
-      {},
+      {problemSolved: deletedProblem._id},
       {
           $pull: {
               problemSolved: deletedProblem._id
-          }
+          },
+           $inc: {
+            userScore: -deletedProblem.score,
+        },
       }
   );
 
