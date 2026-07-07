@@ -12,6 +12,7 @@ const problemRouter=require("./routes/problemCreator");
 const submitRouter = require('./routes/submit');
 const verifyEmailRouter = require('./routes/verifyEmailRouter');
 const submissionHistoryRouter=require("./routes/submissionHistory");
+const aiRouter=require("./routes/aiRoutes");
 
 
 
@@ -30,6 +31,7 @@ app.use('/email',verifyEmailRouter)
 app.use('/problem',problemRouter);
 app.use('/submission',submitRouter);
 app.use('/history',submissionHistoryRouter);
+app.use('/ai',aiRouter);
 
 const InitializeConnection=async()=>{
     try{
