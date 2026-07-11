@@ -13,10 +13,10 @@ const chatWithAI = async (req, res) => {
         }
         
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-flash-latest",
             contents,
             config: {
-                maxOutputTokens: 700,
+                maxOutputTokens: 2000,
                 systemInstruction: `
                                You are CodeHub AI.
 
@@ -33,17 +33,95 @@ const chatWithAI = async (req, res) => {
                                 - Give detailed explanations ONLY when the user specifically asks "explain in detail" or "deep dive".
                                 - Mention time and space complexity only for algorithm-related questions.
                                 - Never add unnecessary introductions or conclusions.
+                                -Give user a descriptive and easily understandable answers only
 
-                                If the question is not related to programming or computer science, reply exactly:
+
+                                Code Formatting Rules:
+
+                                - Whenever you provide code, return ONLY the code.
+                                - Do NOT use language identifiers like cpp, javascript, python, java, etc.
+                                - Preserve proper indentation and line breaks.
+                                - Return code exactly as it would appear in a source file.
+                                - Do not surround code with Markdown or HTML.
+                                - If an explanation is required, write the explanation first, then leave one blank line, then output the code in plain text.
+                                 
+
+                                Code Generation Rules:
+
+                                - Whenever the user asks for code, return the code exactly as it would appear in a source file.
+                                - Never use Markdown code blocks.
+                                - Never use triple backticks.
+                                - Never use language identifiers such as cpp, c, java, python, or javascript.
+                                - Do not use inline code formatting.
+                                - Preserve proper indentation and line breaks.
+                                - Return compilable code.
+                                - Start the response directly with the first line of code (e.g., #include, import, package, etc.).
+                                - Do not write "Here is the code:" or any similar introduction.
+                                - If the user asks for code only, return only the code without any explanation.
+
+                                Example Output Format (C++):
+
+                                #include <iostream>
+                                using namespace std;
+
+                                int main() {
+                                    int a, b;
+                                    cin >> a >> b;
+                                    cout << a + b;
+                                    return 0;
+                                }
+
+
+                                 If the question is not related to programming or computer science, reply exactly:
 
                                 "I am CodeHub AI. I only answer programming and computer science related questions."
                                 `
             }
         });
 
+        let text=response.text;
+     
+
+        text = text.replace(/\$/g, "");
+        text = text.replace(/\\log/g, "log");
+        text = text.replace(/\\times/g, "x");
+        text = text.replace(/\\le/g, "<=");
+        text = text.replace(/\\ge/g, ">=");
+        text = text.replace(/\\neq/g, "!=");
+
+        // Remove Markdown code blocks
+        text = text.replace(/```[\w-]*\n?/g, "");
+        text = text.replace(/```/g, "");
+
+        // Remove inline code (`useState`)
+        text = text.replace(/`([^`]*)`/g, "$1");
+
+        // Remove bold (**text**)
+        text = text.replace(/\*\*(.*?)\*\*/g, "$1");
+
+        // Remove italic (*text*)
+        text = text.replace(/\*(.*?)\*/g, "$1");
+
+        // Remove headings (# Heading)
+        text = text.replace(/^#+\s*/gm, "");
+
+        // Remove common AI introductions
+        text = text.replace(/^Sure!?[\s\n]*/i, "");
+        text = text.replace(/^Certainly!?[\s\n]*/i, "");
+        text = text.replace(/^Here('?|’)s the code:?[\s\n]*/i, "");
+        text = text.replace(/^Here is the code:?[\s\n]*/i, "");
+        text = text.replace(/^Here('?|’)s the solution:?[\s\n]*/i, "");
+        text = text.replace(/^Here is the solution:?[\s\n]*/i, "");
+
+        // Remove extra blank lines
+        text = text.replace(/\n{3,}/g, "\n\n");
+
+        // Trim spaces
+        text = text.trim();
+
         return res.status(200).json({
             success: true,
-            reply: response.text
+            reply: text
         });
        
 
