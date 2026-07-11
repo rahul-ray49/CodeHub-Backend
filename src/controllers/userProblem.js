@@ -2,7 +2,7 @@ const {getLanguageById,submitBatch,submitToken} = require("../utils/problemUtili
 const Problem=require("../models/problem");
 const User =require("../models/user");
 const Submission=require("../models/submission");
-
+const {decode}=require("../utils/decodeResult");
 
 
 const createProblem=async(req,res)=>{
@@ -33,10 +33,10 @@ const createProblem=async(req,res)=>{
 
         //creating a batch submission 
         const submissions=visibleTestCases.map((testcase)=>({
-            source_code:completeCode,
+            source_code: Buffer.from(completeCode, "utf8").toString("base64"),
             language_id: languageId,
-            stdin: testcase.input,
-            expected_output: testcase.output
+            stdin: Buffer.from(testcase.input, "utf8").toString("base64"),
+            expected_output: Buffer.from(testcase.output, "utf8").toString("base64")
         }));
 
         const submitResult=await submitBatch(submissions);
@@ -49,13 +49,31 @@ const createProblem=async(req,res)=>{
 
         const testResult=await submitToken(resultToken);
         //ye fucntion resultToken lega aur response layega from judge0
+         
+        const decodedResult = testResult.map((tc) => ({
+                    ...tc,
+        
+                    stdout: decode(tc.stdout),
+                    stderr: decode(tc.stderr),
+                    compile_output: decode(tc.compile_output),
+                    stdin: decode(tc.stdin),
+                    expected_output: decode(tc.expected_output),
+                }));
 
-        for(const test of testResult){
+
+
+
+        for(const test of decodedResult){
             if(test.status_id!=3){
-                return res.status(400).json({
-                    success:false,
-                    message:"Error Occured While testing problem"
-                });
+              return res.status(400).json({
+                  success: false,
+                  statusId: test.status_id,
+                  status: test.status?.description,
+                  compileOutput: test.compile_output,
+                  stderr: test.stderr,
+                  stdout: test.stdout,
+                  expectedOutput: test.expected_output
+              });
             }
         }
         //ye for loop ye ensure karta hai ki jo bhi source code humne diya hai
@@ -142,10 +160,10 @@ const updateProblem = async(req,res)=>{
             
           // I am creating Batch submission
           const submissions = visibleTestCases.map((testcase)=>({
-              source_code:completeCode,
-              language_id: languageId,
-              stdin: testcase.input,
-              expected_output: testcase.output
+          source_code: Buffer.from(completeCode, "utf8").toString("base64"),
+          language_id: languageId,
+          stdin: Buffer.from(testcase.input, "utf8").toString("base64"),
+          expected_output: Buffer.from(testcase.output, "utf8").toString("base64")
           }));
     
     
@@ -157,10 +175,20 @@ const updateProblem = async(req,res)=>{
           // ["db54881d-bcf5-4c7b-a2e3-d33fe7e25de7","ecc52a9b-ea80-4a00-ad50-4ab6cc3bb2a1","1b35ec3b-5776-48ef-b646-d5522bdeb2cc"]
           
          const testResult = await submitToken(resultToken);
+
+         const decodedResult = testResult.map((tc) => ({
+                     ...tc,
+         
+                     stdout: decode(tc.stdout),
+                     stderr: decode(tc.stderr),
+                     compile_output: decode(tc.compile_output),
+                     stdin: decode(tc.stdin),
+                     expected_output: decode(tc.expected_output),
+                 }));
     
         //  console.log(testResult);
     
-         for(const test of testResult){
+         for(const test of decodedResult){
           if(test.status_id!=3){
            return res.status(400).json({
              success:false,
