@@ -105,7 +105,7 @@ const analyzeProblemCode = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: error.message || "Failed to analyze code."
+            message: "Failed to analyze code."
         });
     }
 };
