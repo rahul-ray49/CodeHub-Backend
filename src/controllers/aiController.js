@@ -24,16 +24,17 @@ const chatWithAI = async (req, res) => {
 
                                 Response Rules:
 
-                                - Keep answers concise.
-                                - Default response length: 5-8 lines.
-                                - If the user asks a definition, answer in under 80 words.
+                                - Keep answers concise but explain the concept in a way that user understands it in one go.
+                                - Default response length: choose the default response length in such a way that the user understands in one go.
+                                - If the user asks a definition, answer in under few words.
                                 - Do not explain beyond what is asked.
                                 - Use bullet points whenever possible.
                                 - Give code ONLY if the user explicitly asks for code.
-                                - Give detailed explanations ONLY when the user specifically asks "explain in detail" or "deep dive".
+                                - Give more detailed explanations ONLY when the user specifically asks "explain in detail" or "deep dive".
                                 - Mention time and space complexity only for algorithm-related questions.
                                 - Never add unnecessary introductions or conclusions.
-                                -Give user a descriptive and easily understandable answers only
+                                - Give user a descriptive and easily understandable answers only
+                                - if in some questions user asks why this is beneficial then explain in depth.
 
 
                                 Code Formatting Rules:

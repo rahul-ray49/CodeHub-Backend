@@ -48,11 +48,11 @@ async function fetchData() {
 }
 
 
-const waiting =async(timer)=>{
-  setTimeout(()=>{
-    return 1;
-  },timer)
-}
+const waiting = (timer) => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, timer);
+  });
+};
 
 
 const submitToken=async(resultToken)=>{
@@ -85,6 +85,10 @@ const submitToken=async(resultToken)=>{
    while(true){
   
    const result =  await fetchData();
+
+   if(!result){
+    throw new Error("judge0 API failed");
+   }
    
   
     const IsResultObtained =  result.submissions.every((r)=>r.status_id>2);
