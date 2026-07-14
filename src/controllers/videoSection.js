@@ -276,4 +276,4 @@ const deleteVideo = async (req, res) => {
 };
 
 
-module.exports={generateUploadSignature}
+module.exports={generateUploadSignature,saveVideoMetadata,deleteVideo}

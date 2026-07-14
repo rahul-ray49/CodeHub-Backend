@@ -73,7 +73,7 @@ const chatWithAI = async (req, res) => {
                                 }
 
 
-                                 If the question is not related to programming or computer science, reply exactly:
+                                 If the question is not related to programming or computer science or weather, reply exactly:
 
                                 "I am CodeHub AI. I only answer programming and computer science related questions."
                                 `
@@ -90,23 +90,17 @@ const chatWithAI = async (req, res) => {
         text = text.replace(/\\ge/g, ">=");
         text = text.replace(/\\neq/g, "!=");
 
-        // Remove Markdown code blocks
         text = text.replace(/```[\w-]*\n?/g, "");
         text = text.replace(/```/g, "");
 
-        // Remove inline code (`useState`)
         text = text.replace(/`([^`]*)`/g, "$1");
 
-        // Remove bold (**text**)
         text = text.replace(/\*\*(.*?)\*\*/g, "$1");
 
-        // Remove italic (*text*)
         text = text.replace(/\*(.*?)\*/g, "$1");
 
-        // Remove headings (# Heading)
         text = text.replace(/^#+\s*/gm, "");
 
-        // Remove common AI introductions
         text = text.replace(/^Sure!?[\s\n]*/i, "");
         text = text.replace(/^Certainly!?[\s\n]*/i, "");
         text = text.replace(/^Here('?|’)s the code:?[\s\n]*/i, "");
@@ -114,10 +108,8 @@ const chatWithAI = async (req, res) => {
         text = text.replace(/^Here('?|’)s the solution:?[\s\n]*/i, "");
         text = text.replace(/^Here is the solution:?[\s\n]*/i, "");
 
-        // Remove extra blank lines
         text = text.replace(/\n{3,}/g, "\n\n");
 
-        // Trim spaces
         text = text.trim();
 
         return res.status(200).json({

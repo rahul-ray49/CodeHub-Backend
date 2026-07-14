@@ -13,6 +13,7 @@ const submitRouter = require('./routes/submit');
 const verifyEmailRouter = require('./routes/verifyEmailRouter');
 const submissionHistoryRouter=require("./routes/submissionHistory");
 const aiRouter=require("./routes/aiRoutes");
+const videoRouter = require('./routes/videoCreator');
 
 
 
@@ -32,6 +33,7 @@ app.use('/problem',problemRouter);
 app.use('/submission',submitRouter);
 app.use('/history',submissionHistoryRouter);
 app.use('/ai',aiRouter);
+app.use('/video',videoRouter);
 
 
 const InitializeConnection=async()=>{

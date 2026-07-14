@@ -4,12 +4,13 @@ const problemRouter =  express.Router();
 const adminMiddleware = require("../middleware/adminMiddleware")
 const {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,getAllProblem2,solvedAllProblemByUser2} = require("../controllers/userProblem");
 const userMiddleware=require("../middleware/userMiddleware");
+const {getProblemOfTheDay}=require("../controllers/potdController");
 // Create
 problemRouter.post("/create",adminMiddleware,createProblem);
 problemRouter.put("/update/:id",adminMiddleware,updateProblem);
 problemRouter.delete("/delete/:id",adminMiddleware,deleteProblem);
 
-
+problemRouter.get("/potd",userMiddleware, getProblemOfTheDay);
 problemRouter.get("/problemById/:id",userMiddleware,getProblemById);
 problemRouter.get("/getAllProblem",userMiddleware, getAllProblem);
 problemRouter.get("/getAllProblem2",userMiddleware,getAllProblem2);
