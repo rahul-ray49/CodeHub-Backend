@@ -3,7 +3,7 @@ const Problem=require("../models/problem");
 const User =require("../models/user");
 const Submission=require("../models/submission");
 const {decode}=require("../utils/decodeResult");
-
+const SolutionVideo=require("../models/solutionVideo");
 
 const createProblem=async(req,res)=>{
 
@@ -597,8 +597,101 @@ const submittedProblem=async(req,res)=>{
   }
 }
 
+const getAllProblemsWithVideoStatus = async (req, res) => {
 
-module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem,getAllProblem2,solvedAllProblemByUser2}
+    try {
+
+        const page = Number(req.query.page) || 1;
+        const limitVal = Number(req.query.limit) || 5;
+
+        const { difficulty, tag, search } = req.query;
+
+        const filter = {};
+
+        if (difficulty && difficulty !== "all") {
+            filter.difficulty = difficulty;
+        }
+
+        if (tag && tag !== "all") {
+            filter.tags = tag;
+        }
+
+        if (search) {
+            filter.title = {
+                $regex: search,
+                $options: "i"
+            };
+        }
+
+        const totalProblems = await Problem.countDocuments(filter);
+
+        const problems = await Problem.find(filter)
+            .select("_id title difficulty tags score problemNumber")
+            .skip((page - 1) * limitVal)
+            .limit(limitVal);
+
+        // Fetch videos only for current page problems
+        const videos = await SolutionVideo.find({
+            problemId: {
+                $in: problems.map(problem => problem._id)
+            }
+        }).select("_id problemId");
+
+        // Create lookup map
+        const videoMap = new Map();
+
+        videos.forEach(video => {
+            videoMap.set(video.problemId.toString(), video);
+        });
+
+        // Merge video status with problems
+        const problemsWithVideoStatus = problems.map(problem => {
+
+            const video = videoMap.get(problem._id.toString());
+
+            return {
+                ...problem.toObject(),
+
+                hasVideo: !!video,
+
+                videoId: video ? video._id : null
+            };
+
+        });
+
+        return res.status(200).json({
+
+            success: true,
+
+            currentPage: page,
+
+            totalPages: Math.ceil(totalProblems / limitVal),
+
+            totalProblems,
+
+            problems: problemsWithVideoStatus
+
+        });
+
+    }
+
+    catch (err) {
+
+        console.log("GET ALL VIDEO PROBLEMS ERROR:", err);
+
+        return res.status(500).json({
+
+            success: false,
+
+            message: "Internal Server Error"
+
+        });
+
+    }
+
+}
+
+module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem,getAllProblem2,solvedAllProblemByUser2,getAllProblemsWithVideoStatus}
 
 
 

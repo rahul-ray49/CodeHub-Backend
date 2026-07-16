@@ -46,7 +46,17 @@ const submissionSchema = new Schema({
   testCasesTotal: {  // Recommended addition
     type: Number,
     default: 0
-  }
+  },
+  contestId: {
+    type: Schema.Types.ObjectId,
+    ref: "contest",
+    default: null
+},
+submissionType: {
+    type: String,
+    enum: ["Practice", "Contest"],
+    default: "Practice"
+}
 }, { 
   timestamps: true
 });

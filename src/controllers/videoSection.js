@@ -3,7 +3,7 @@ const Problem = require("../models/problem");
 const User = require("../models/user");
 const SolutionVideo = require("../models/solutionVideo");
 const { sanitizeFilter } = require('mongoose');
-
+const mongoose = require("mongoose");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -144,7 +144,11 @@ const saveVideoMetadata = async (req, res) => {
     // Verify the upload with Cloudinary
     const cloudinaryResource = await cloudinary.api.resource(
       cloudinaryPublicId,
-      { resource_type: 'video' }
+      { 
+        resource_type: 'video',
+        image_metadata: true,
+        media_metadata: true
+       }
     );
 
     if (!cloudinaryResource) {
@@ -160,8 +164,6 @@ const saveVideoMetadata = async (req, res) => {
         message: "Invalid Cloudinary resource."
     });
 }
-
-   
 
     const thumbnailUrl = cloudinary.url(cloudinaryResource.public_id, {
     resource_type: 'video', 
