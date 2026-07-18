@@ -1,21 +1,29 @@
 const express = require('express');
+const {
+    createProblemLimiter,
+    updateProblemLimiter,
+    deleteProblemLimiter,
+    problemFetchLimiter,
+    videoFetchLimiter
+} = require("../middleware/rateLimiter");
 
 const problemRouter =  express.Router();
 const adminMiddleware = require("../middleware/adminMiddleware")
-const {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,getAllProblem2,solvedAllProblemByUser2} = require("../controllers/userProblem");
+const {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,getAllProblem2,solvedAllProblemByUser2,getVideoByProblemId} = require("../controllers/userProblem");
 const userMiddleware=require("../middleware/userMiddleware");
 const {getProblemOfTheDay}=require("../controllers/potdController");
 // Create
-problemRouter.post("/create",adminMiddleware,createProblem);
-problemRouter.put("/update/:id",adminMiddleware,updateProblem);
-problemRouter.delete("/delete/:id",adminMiddleware,deleteProblem);
+problemRouter.post("/create",adminMiddleware,createProblemLimiter,createProblem);
+problemRouter.put("/update/:id",adminMiddleware,updateProblemLimiter,updateProblem);
+problemRouter.delete("/delete/:id",adminMiddleware, deleteProblemLimiter,deleteProblem);
 
-problemRouter.get("/potd",userMiddleware, getProblemOfTheDay);
-problemRouter.get("/problemById/:id",userMiddleware,getProblemById);
-problemRouter.get("/getAllProblem",userMiddleware, getAllProblem);
-problemRouter.get("/getAllProblem2",userMiddleware,getAllProblem2);
-problemRouter.get("/problemSolvedByUser",userMiddleware, solvedAllProblembyUser);
-problemRouter.get("/ProblemSolvedByUser2",userMiddleware,solvedAllProblemByUser2);
+problemRouter.get("/potd",userMiddleware, problemFetchLimiter, getProblemOfTheDay);
+problemRouter.get("/problemById/:id",userMiddleware, problemFetchLimiter,getProblemById);
+problemRouter.get("/getAllProblem",userMiddleware,  problemFetchLimiter,getAllProblem);
+problemRouter.get("/getAllProblem2",userMiddleware, problemFetchLimiter,getAllProblem2);
+problemRouter.get("/problemSolvedByUser",userMiddleware,problemFetchLimiter,solvedAllProblembyUser);
+problemRouter.get("/ProblemSolvedByUser2",userMiddleware, problemFetchLimiter,solvedAllProblemByUser2);
+problemRouter.get("/video/:problemId",userMiddleware, videoFetchLimiter,getVideoByProblemId);
 // fetch
 // update
 // delete 

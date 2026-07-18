@@ -4,6 +4,9 @@ const User =require("../models/user");
 const Submission=require("../models/submission");
 const {decode}=require("../utils/decodeResult");
 const SolutionVideo=require("../models/solutionVideo");
+const cloudinary = require("../config/cloudinary");
+const mongoose = require("mongoose");
+
 
 const createProblem=async(req,res)=>{
 
@@ -100,6 +103,7 @@ const createProblem=async(req,res)=>{
    }
    catch(err){
        console.error(err);
+       
        return res.status(500).json({
            success:false,
            message:"Internal Server Error"
@@ -238,10 +242,37 @@ const deleteProblem=async(req,res)=>{
           message:"Problem is Missing"
       });
       //checks whether id is being provided or not
+
+      const video = await SolutionVideo.findOne({problemId:id});
+
+      if (video) {
+
+          const cloudinaryResponse = await cloudinary.uploader.destroy(
+              video.cloudinaryPublicId,
+              {
+                  resource_type: "video",
+                  invalidate: true,
+              }
+          );
+
+          if (
+              cloudinaryResponse.result !== "ok" &&
+              cloudinaryResponse.result !== "not found"
+          ) {
+              return res.status(500).json({
+                  success: false,
+                  message: "Failed to delete associated video.",
+              });
+          }
+
+          await SolutionVideo.findByIdAndDelete(video._id);
+
+      }
+
       
 
-    const deletedProblem = await Problem.findByIdAndDelete(id);
     //findIdandDelete basically us problem ko dhundta hai aur agar uss id ki problem hai toh usse delete karke wahi return kar deta hai
+      const deletedProblem = await Problem.findByIdAndDelete(id);
 
       if(!deletedProblem)
       return res.status(404).json({
@@ -691,7 +722,49 @@ const getAllProblemsWithVideoStatus = async (req, res) => {
 
 }
 
-module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem,getAllProblem2,solvedAllProblemByUser2,getAllProblemsWithVideoStatus}
+const getVideoByProblemId = async (req, res) => {
+    try {
+        const { problemId } = req.params;
+
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(problemId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid problem id"
+            });
+        }
+
+        const video = await SolutionVideo.findOne({
+            problemId,
+            isPublished: true
+        }).select(
+            "problemId secureUrl thumbnailUrl duration format title description createdAt"
+        );
+
+        if (!video) {
+            return res.status(404).json({
+                success: false,
+                message: "Video solution not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Video fetched successfully",
+            video
+        });
+
+    } catch (error) {
+        console.error("Get Video By ProblemId Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+    }
+};
+
+module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem,getAllProblem2,solvedAllProblemByUser2,getAllProblemsWithVideoStatus,getVideoByProblemId}
 
 
 

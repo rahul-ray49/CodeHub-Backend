@@ -1,5 +1,5 @@
 const express=require("express");
-
+const {historyLimiter} = require("../middleware/rateLimiter");
 const submissionHistoryRouter=express.Router();
 
 const userMiddleware=require("../middleware/userMiddleware");
@@ -7,9 +7,9 @@ const {userSubmissionHistory,submittedProblemHistory}=require("../controllers/us
 const {submittedProblem}=require("../controllers/userProblem");
 
 
-submissionHistoryRouter.get("/submission-history",userMiddleware,userSubmissionHistory);
-submissionHistoryRouter.get("/submittedProblem/:pid",userMiddleware,submittedProblem);
-submissionHistoryRouter.get("/submission-history-details/:sid",userMiddleware,submittedProblemHistory);
+submissionHistoryRouter.get("/submission-history",userMiddleware, historyLimiter,userSubmissionHistory);
+submissionHistoryRouter.get("/submittedProblem/:pid",userMiddleware, historyLimiter,submittedProblem);
+submissionHistoryRouter.get("/submission-history-details/:sid",userMiddleware, historyLimiter,submittedProblemHistory);
 
 
 module.exports=submissionHistoryRouter;

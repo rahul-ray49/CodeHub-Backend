@@ -53,6 +53,22 @@ const userSchema = new Schema({
     userScore:{
         type:Number,
         default:0
+    },
+    profileImage: {
+    url: {
+        type: String,
+        default: ""
+    },
+    public_id: {
+        type: String,
+        default: ""
+    }
+    },
+    about: {
+        type: String,
+        trim:true,
+        maxlength: 300,
+        default: "Passionate programmer exploring new technologies and solving problems."
     }
 },{
     timestamps:true

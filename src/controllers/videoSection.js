@@ -1,15 +1,10 @@
-const cloudinary = require('cloudinary').v2;
 const Problem = require("../models/problem");
 const User = require("../models/user");
 const SolutionVideo = require("../models/solutionVideo");
 const { sanitizeFilter } = require('mongoose');
 const mongoose = require("mongoose");
+const cloudinary=require("../config/cloudinary");
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 const generateUploadSignature = async (req, res) => {
   try {
@@ -214,7 +209,7 @@ const saveVideoMetadata = async (req, res) => {
 
 const deleteVideo = async (req, res) => {
   try {
-    const { videoId } = req.params;
+    const { problemId } = req.params;
 
     // Authentication Check
     if (!req.result || !req.result._id) {
@@ -225,15 +220,15 @@ const deleteVideo = async (req, res) => {
     }
 
     // Validate Video Id
-    if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    if (!mongoose.Types.ObjectId.isValid(problemId)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Video Id",
+        message: "Invalid Problem Id",
       });
     }
 
     // Find Video
-    const video = await SolutionVideo.findById(videoId);
+    const video = await SolutionVideo.findOne({problemId});
 
     if (!video) {
       return res.status(404).json({
@@ -252,15 +247,16 @@ const deleteVideo = async (req, res) => {
     );
 
     // Verify Cloudinary Deletion
-    if (cloudinaryResponse.result !== "ok") {
+    if (cloudinaryResponse.result !== "ok" &&  cloudinaryResponse.result !== "not found") {
       return res.status(500).json({
         success: false,
         message: "Failed to delete video from Cloudinary.",
       });
     }
 
+
     // Delete MongoDB Record
-    await SolutionVideo.findByIdAndDelete(videoId);
+    await SolutionVideo.findByIdAndDelete(video._id);
 
     return res.status(200).json({
       success: true,

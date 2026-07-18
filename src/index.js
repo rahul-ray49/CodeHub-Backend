@@ -16,7 +16,6 @@ const aiRouter=require("./routes/aiRoutes");
 const videoRouter = require('./routes/videoCreator');
 
 
-
 app.use(cors({
   origin: "http://localhost:5173",
   credentials: true

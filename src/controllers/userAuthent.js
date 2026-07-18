@@ -6,6 +6,8 @@ const redisClient=require('../config/redis');
 const Submission=require("../models/submission");
 const crypto=require("crypto");
 const transporter=require("../utils/sendMail");
+const cloudinary=require("../config/cloudinary");
+const fs=require("fs");
 
 const register=async(req,res)=>{
     try{
@@ -126,7 +128,8 @@ const login=async(req,res)=>{
         firstName:user.firstName,
         emailId:user.emailId,
         _id:user._id,
-        role:user.role
+        role:user.role,
+        profileImage:user.profileImage
       };
       const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
       res.cookie('token',token,{maxAge:60*60*1000});
@@ -334,13 +337,129 @@ const getUserProfile=async(req,res)=>{
     }
 }
 
+const getUserProfileForUpdation = async (req, res) => {
+    try {
+        const userId = req.result._id;
+        
+        const user = await User.findById(userId).select("username firstName lastName about profileImage");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "User profile fetched successfully",
+            user
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+    }
+};
+
+
+const updateProfile = async (req, res) => {
+    try {
+
+        const userId = req.result._id;
+
+        const { firstName, lastName, about } = req.body;
+
+        const user = await User.findById(userId).select(
+            "firstName lastName about profileImage"
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (typeof firstName === "string") {
+            user.firstName = firstName.trim();
+        }
+
+        if (typeof lastName === "string") {
+            user.lastName = lastName.trim();
+        }
+
+        if (typeof about === "string") {
+            user.about = about.trim();
+        }
+
+        if (req.file) {
+
+            if (user.profileImage?.public_id) {
+                try {
+                    await cloudinary.uploader.destroy(
+                        user.profileImage.public_id
+                    );
+                } catch (err) {
+                    console.log("Old image delete failed:", err.message);
+                }
+            }
+
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: "codehub/profile-images",
+                resource_type: "image"
+            });
+
+            user.profileImage = {
+                url: result.secure_url,
+                public_id: result.public_id
+            };
+
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.log(err);
+            });
+        }
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                about: user.about,
+                profileImage: user.profileImage
+            }
+        });
+
+    } catch (error) {
+        if (req.file?.path) {
+            fs.unlink(req.file.path, () => {});
+        }
+
+        console.log(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+
+    }
+};
+
 module.exports={
     register,
     login,
     logout,
     adminRegister,
     deleteProfile,
-    getUserProfile
+    getUserProfile,
+    updateProfile,
+    getUserProfileForUpdation
 }
 
 
