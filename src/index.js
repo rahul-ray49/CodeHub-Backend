@@ -1,7 +1,8 @@
+
+require('dotenv').config();
 const express=require('express');
 const app=express();
 const dbConnect = require('./config/db');
-require('dotenv').config();
 const User = require('./models/user');
 const cookieParser = require('cookie-parser');
 const cors=require('cors');
@@ -25,7 +26,12 @@ app.use(express.json());
 app.use(cookieParser());
 
 
-
+app.get("/", (req, res) => {
+    res.json({
+        success: true,
+        message: "CodeHub Backend is running 🚀"
+    });
+});
 app.use('/user',authRouter);
 app.use('/email',verifyEmailRouter)
 app.use('/problem',problemRouter);
