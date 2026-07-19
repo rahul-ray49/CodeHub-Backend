@@ -156,7 +156,7 @@ const login=async(req,res)=>{
         profileImage:user.profileImage
       };
       const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
-      res.cookie('token',token,{maxAge:60*60*1000});
+      res.cookie('token',token,{httpOnly:true, secure: process.env.NODE_ENV === "production",sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",maxAge:60*60*1000});
 
 
       return res.status(200).json({
