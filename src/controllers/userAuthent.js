@@ -12,12 +12,10 @@ const fs=require("fs");
 const register = async (req, res) => {
     try {
 
-        // Validate Request Body
         validate(req.body);
 
         const { firstName, emailId, password } = req.body;
 
-        // Check if email already exists
         const existingUser = await User.findOne({ emailId });
 
         if (existingUser) {
@@ -26,14 +24,10 @@ const register = async (req, res) => {
                 message: "Email already registered"
             });
         }
-
-        // Generate Verification Token
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
-        // Hash Password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create User
         const user = await User.create({
             ...req.body,
             password: hashedPassword,
@@ -41,10 +35,9 @@ const register = async (req, res) => {
             verificationToken
         });
 
-        // Verification Link
-        const verificationLink = `http://localhost:3000/email/verify/${verificationToken}`;
+       
+        const verificationLink = `${process.env.BACKEND_URL}/email/verify/${verificationToken}`;
 
-        // Send Verification Email
         await transporter.sendMail({
             from: process.env.EMAIL,
             to: user.emailId,
@@ -510,7 +503,7 @@ const resendVerificationEmail = async (req, res) => {
         await user.save();
 
         const verificationLink =
-            `http://localhost:3000/email/verify/${crypto_token}`;
+            `${process.env.BACKEND_URL}/email/verify/${crypto_token}`;;
 
         await transporter.sendMail({
             from: process.env.EMAIL,
