@@ -47,39 +47,30 @@ const register = async (req, res) => {
         console.log(process.env.EMAIL);
         console.log(process.env.EMAIL_PASS ? "PASS FOUND" : "PASS MISSING");
 
-        await transporter.sendMail({
-            from: process.env.EMAIL,
-            to: user.emailId,
-            subject: "Verify Your CodeHub Account",
-            html: `
-                <h2>Welcome to CodeHub 🚀</h2>
+        try {
+                await transporter.verify();
+                console.log("Transport verified");
+            } catch (err) {
+                console.error("Verify Error:", err);
+            }
 
-                <p>Hi ${firstName},</p>
+        try {
+            const info = await transporter.sendMail({
+                from: process.env.EMAIL,
+                to: user.emailId,
+                subject: "Verify Your CodeHub Account",
+                html: `...`
+            });
 
-                <p>Thank you for registering on CodeHub.</p>
-
-                <p>Please click the button below to verify your email address.</p>
-
-                <a
-                    href="${verificationLink}"
-                    style="
-                        display:inline-block;
-                        padding:12px 20px;
-                        background:#2563eb;
-                        color:white;
-                        text-decoration:none;
-                        border-radius:8px;
-                        font-weight:bold;
-                    "
-                >
-                    Verify Email
-                </a>
-
-                <p style="margin-top:20px;">
-                    If you didn't create this account, you can safely ignore this email.
-                </p>
-            `
-        });
+            console.log("Mail sent successfully");
+            console.log(info);
+        } catch (error) {
+            console.error("SendMail Error:", error);
+            return res.status(500).json({
+                success: false,
+                message: error.message
+            });
+        }
         console.log("8. After sendMail");
         console.log("9. Sending Response");
 
