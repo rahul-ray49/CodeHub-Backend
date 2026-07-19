@@ -48,29 +48,28 @@ const register = async (req, res) => {
         console.log(process.env.EMAIL_PASS ? "PASS FOUND" : "PASS MISSING");
 
         try {
-                await transporter.verify();
-                console.log("Transport verified");
+                const info = await transporter.sendMail({
+                    from: process.env.EMAIL,
+                    to: user.emailId,
+                    subject: "Verify Your CodeHub Account",
+                    html: `
+                        ....
+                    `
+                });
+
+                console.log("Mail sent:", info.messageId);
+
             } catch (err) {
-                console.error("Verify Error:", err);
+
+                console.error("MAIL ERROR");
+                console.error(err);
+
+                return res.status(500).json({
+                    success:false,
+                    message:err.message
+                });
+
             }
-
-        try {
-            const info = await transporter.sendMail({
-                from: process.env.EMAIL,
-                to: user.emailId,
-                subject: "Verify Your CodeHub Account",
-                html: `...`
-            });
-
-            console.log("Mail sent successfully");
-            console.log(info);
-        } catch (error) {
-            console.error("SendMail Error:", error);
-            return res.status(500).json({
-                success: false,
-                message: error.message
-            });
-        }
         console.log("8. After sendMail");
         console.log("9. Sending Response");
 
