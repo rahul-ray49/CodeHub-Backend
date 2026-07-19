@@ -2,26 +2,20 @@ const express = require('express');
 
 const authRouter=express.Router();
 
-const {register,login,logout,adminRegister,deleteProfile,getUserProfile,updateProfile,getUserProfileForUpdation}=require('../controllers/userAuthent');
+const {register,login,logout,adminRegister,deleteProfile,getUserProfile,updateProfile,getUserProfileForUpdation,resendVerificationEmail}=require('../controllers/userAuthent');
 
 const userMiddleware=require('../middleware/userMiddleware');
 
 const adminMiddleware=require('../middleware/adminMiddleware');
 
 const upload=require('../middleware/imageMulter');
-const {
-    loginLimiter,
-    registerLimiter,
-    logoutLimiter,
-    profileLimiter,
-    uploadLimiter,
-    adminRegisterLimiter
-} = require("../middleware/rateLimiter");
+const {loginLimiter,registerLimiter, logoutLimiter, profileLimiter, uploadLimiter, adminRegisterLimiter} = require("../middleware/rateLimiter");
 
 //Registering the user
 authRouter.post('/register',registerLimiter,register);
 authRouter.post('/login',loginLimiter,login);
 authRouter.post('/logout',userMiddleware,logoutLimiter,logout);
+authRouter.post("/resend-verification",resendVerificationEmail);
 authRouter.post('/admin/register',adminMiddleware,adminRegisterLimiter,adminRegister);
 authRouter.delete('/deleteProfile',userMiddleware,profileLimiter,deleteProfile);
 authRouter.get('/check',userMiddleware,(req,res)=>{

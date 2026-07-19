@@ -9,79 +9,103 @@ const transporter=require("../utils/sendMail");
 const cloudinary=require("../config/cloudinary");
 const fs=require("fs");
 
-const register=async(req,res)=>{
-    try{
-      // validate the data
-      validate(req.body);
+const register = async (req, res) => {
+    try {
 
-      const {firstName,emailId,password}=req.body;
-      
-      //request body mein password ko hash karna hai
-        const crypto_token = crypto.randomBytes(32).toString('hex');
-        req.body.password=await bcrypt.hash(password,10);
-        req.body.role="user";
-        
-        
-        //by default role user rakh denge jab bhi koi register karega
-        //agar admin create karna hai toh uske liye alag se ek route bana denge jisme admin hi access kar sakta hai aur us route me role ko admin set kar denge
+        // Validate Request Body
+        validate(req.body);
+
+        const { firstName, emailId, password } = req.body;
+
+        // Check if email already exists
         const existingUser = await User.findOne({ emailId });
 
-        if(existingUser){
+        if (existingUser) {
             return res.status(409).json({
-                success:false,
-                message:"Email already registered"
+                success: false,
+                message: "Email already registered"
             });
         }
 
+        // Generate Verification Token
+        const verificationToken = crypto.randomBytes(32).toString("hex");
 
-      
-        //create the user in database
+        // Hash Password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user=await User.create({...req.body,verificationToken:crypto_token});
+        // Create User
+        const user = await User.create({
+            ...req.body,
+            password: hashedPassword,
+            role: "user",
+            verificationToken
+        });
 
+        // Verification Link
+        const verificationLink = `http://localhost:3000/email/verify/${verificationToken}`;
 
-
-        const verificationLink =`http://localhost:3000/email/verify/${crypto_token}`;
-
+        // Send Verification Email
         await transporter.sendMail({
-        from: process.env.EMAIL,
-        to: user.emailId,
-        subject: "Verify Your CodeHub Account",
-        html: `
-        <h2>Welcome to CodeHub 🚀</h2>
+            from: process.env.EMAIL,
+            to: user.emailId,
+            subject: "Verify Your CodeHub Account",
+            html: `
+                <h2>Welcome to CodeHub 🚀</h2>
 
-        <p>Please verify your account.</p>
+                <p>Hi ${firstName},</p>
 
-        <a href="${verificationLink}">
-            Verify Email
-        </a>
-        `
-    });
+                <p>Thank you for registering on CodeHub.</p>
 
-     
-        res.status(201).json({
-            success:true,
-            message:"Registration Successful Please verify your email"
-      });
+                <p>Please click the button below to verify your email address.</p>
 
+                <a
+                    href="${verificationLink}"
+                    style="
+                        display:inline-block;
+                        padding:12px 20px;
+                        background:#2563eb;
+                        color:white;
+                        text-decoration:none;
+                        border-radius:8px;
+                        font-weight:bold;
+                    "
+                >
+                    Verify Email
+                </a>
 
-    }
-    catch(err){
+                <p style="margin-top:20px;">
+                    If you didn't create this account, you can safely ignore this email.
+                </p>
+            `
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Registration successful. Please verify your email."
+        });
+
+    } catch (err) {
+
         console.error(err);
 
-        if(err.message === "Missing mandatory fields" || err.message === "Invalid email format" || err.message === "Password should be strong"){
-         return res.status(400).json({
-            success: false,
-            message: err.message
-        });
-    }
+        if (
+            err.message === "Missing mandatory fields" ||
+            err.message === "Invalid email format" ||
+            err.message === "Password should be strong"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: err.message
+            });
+        }
 
         return res.status(500).json({
-            success:false,
-            message:"Registration Failed"
+            success: false,
+            message: "Registration failed"
         });
+
     }
-}
+};
 
 const login=async(req,res)=>{
 
@@ -451,6 +475,94 @@ const updateProfile = async (req, res) => {
     }
 };
 
+const resendVerificationEmail = async (req, res) => {
+    try {
+
+        const { emailId } = req.body;
+
+        if (!emailId) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required"
+            });
+        }
+
+        const user = await User.findOne({ emailId });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is already verified"
+            });
+        }
+
+        const crypto_token = crypto.randomBytes(32).toString("hex");
+
+        user.verificationToken = crypto_token;
+
+        await user.save();
+
+        const verificationLink =
+            `http://localhost:3000/email/verify/${crypto_token}`;
+
+        await transporter.sendMail({
+            from: process.env.EMAIL,
+            to: user.emailId,
+            subject: "Verify Your CodeHub Account",
+            html: `
+                <h2>Welcome to CodeHub 🚀</h2>
+
+                <p>Hi ${user.firstName},</p>
+
+                <p>Thank you for registering on CodeHub.</p>
+
+                <p>Please click the button below to verify your email address.</p>
+
+                <a
+                    href="${verificationLink}"
+                    style="
+                        display:inline-block;
+                        padding:12px 20px;
+                        background:#2563eb;
+                        color:white;
+                        text-decoration:none;
+                        border-radius:8px;
+                        font-weight:bold;
+                    "
+                >
+                    Verify Email
+                </a>
+
+                <p style="margin-top:20px;">
+                    If you didn't create this account, you can safely ignore this email.
+                </p>
+            `
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Verification email sent successfully."
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to resend verification email"
+        });
+
+    }
+};
+
 module.exports={
     register,
     login,
@@ -459,7 +571,8 @@ module.exports={
     deleteProfile,
     getUserProfile,
     updateProfile,
-    getUserProfileForUpdation
+    getUserProfileForUpdation,
+    resendVerificationEmail
 }
 
 
