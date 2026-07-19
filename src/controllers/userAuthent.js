@@ -11,12 +11,13 @@ const fs=require("fs");
 
 const register = async (req, res) => {
     try {
-
+        console.log("1. Register Started");
         validate(req.body);
-
+        console.log("2. Validation Done");
         const { firstName, emailId, password } = req.body;
 
         const existingUser = await User.findOne({ emailId });
+        console.log("3. Existing User Checked");
 
         if (existingUser) {
             return res.status(409).json({
@@ -25,8 +26,11 @@ const register = async (req, res) => {
             });
         }
         const verificationToken = crypto.randomBytes(32).toString("hex");
+        console.log("4. Token Generated");
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log("5. Password Hashed");
+
 
         const user = await User.create({
             ...req.body,
@@ -34,9 +38,12 @@ const register = async (req, res) => {
             role: "user",
             verificationToken
         });
+        console.log("6. User Created");
+
 
        
         const verificationLink = `${process.env.BACKEND_URL}/email/verify/${verificationToken}`;
+        console.log("7. Before sendMail");
 
         await transporter.sendMail({
             from: process.env.EMAIL,
@@ -71,6 +78,8 @@ const register = async (req, res) => {
                 </p>
             `
         });
+        console.log("8. After sendMail");
+        console.log("9. Sending Response");
 
         return res.status(201).json({
             success: true,
