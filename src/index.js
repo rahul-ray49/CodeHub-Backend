@@ -17,7 +17,7 @@ const videoRouter = require('./routes/videoCreator');
 
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 
@@ -34,12 +34,12 @@ app.use('/history',submissionHistoryRouter);
 app.use('/ai',aiRouter);
 app.use('/video',videoRouter);
 
-
+const PORT = process.env.PORT || 8000;
 const InitializeConnection=async()=>{
     try{
         await Promise.all([dbConnect(),redisClient.connect()]);
         console.log("All connections initialized");
-        app.listen(process.env.PORT, ()=>{
+        app.listen(PORT, ()=>{
             console.log(`Server is running on port ${process.env.PORT}`);
         });
     }
