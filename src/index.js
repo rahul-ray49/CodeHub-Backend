@@ -27,7 +27,8 @@ app.use(cookieParser());
 
 
 app.get("/", (req, res) => {
-    res.json({
+    console.log("route hit");
+    return res.status(200).json({
         success: true,
         message: "CodeHub Backend is running 🚀"
     });
