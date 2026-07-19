@@ -7,7 +7,8 @@ const redisClient = createClient({
         port: 19875
     }
 });
-
+console.log("REDIS_HOST:", process.env.REDIS_HOST);
+console.log("REDIS_PASS exists:", !!process.env.REDIS_PASS);
 module.exports=redisClient;
 
 
