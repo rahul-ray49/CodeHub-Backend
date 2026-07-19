@@ -44,6 +44,8 @@ const register = async (req, res) => {
        
         const verificationLink = `${process.env.BACKEND_URL}/email/verify/${verificationToken}`;
         console.log("7. Before sendMail");
+        console.log(process.env.EMAIL);
+        console.log(process.env.EMAIL_PASS ? "PASS FOUND" : "PASS MISSING");
 
         await transporter.sendMail({
             from: process.env.EMAIL,
