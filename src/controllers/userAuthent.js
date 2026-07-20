@@ -44,12 +44,12 @@ const register = async (req, res) => {
        
         const verificationLink = `${process.env.BACKEND_URL}/email/verify/${verificationToken}`;
         console.log("7. Before sendMail");
-        console.log(process.env.EMAIL);
-        console.log(process.env.EMAIL_PASS ? "PASS FOUND" : "PASS MISSING");
+        console.log(process.env.BREVO_EMAIL);
+        console.log(process.env.BREVO_PASS ? "PASS FOUND" : "PASS MISSING");
 
         try {
                 const info = await transporter.sendMail({
-                    from: process.env.EMAIL,
+                    from: process.env.BREVO_EMAIL,
                     to: user.emailId,
                     subject: "Verify Your CodeHub Account",
                     html: `
@@ -507,7 +507,7 @@ const resendVerificationEmail = async (req, res) => {
             `${process.env.BACKEND_URL}/email/verify/${crypto_token}`;;
 
         await transporter.sendMail({
-            from: process.env.EMAIL,
+            from: process.env.BREVO_EMAIL,
             to: user.emailId,
             subject: "Verify Your CodeHub Account",
             html: `
