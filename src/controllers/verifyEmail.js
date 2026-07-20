@@ -29,8 +29,7 @@ const verifyEmail = async(req,res)=>{
         user.verificationToken = null;
 
         await user.save();
-
-        res.status(200).redirect( "http://localhost:5173/login");
+        res.redirect(`${process.env.FRONTEND_URL}/login`);
 
     }
     catch(err){
