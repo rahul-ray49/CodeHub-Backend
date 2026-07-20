@@ -8,6 +8,7 @@ const crypto=require("crypto");
 const transporter=require("../utils/sendMail");
 const cloudinary=require("../config/cloudinary");
 const fs=require("fs");
+const sendVerificationEmail = require("../utils/brevoMail");
 
 const register = async (req, res) => {
     try {
@@ -47,29 +48,38 @@ const register = async (req, res) => {
         console.log(process.env.BREVO_EMAIL);
         console.log(process.env.BREVO_PASS ? "PASS FOUND" : "PASS MISSING");
 
-        try {
-                const info = await transporter.sendMail({
-                    from: process.env.BREVO_EMAIL,
-                    to: user.emailId,
-                    subject: "Verify Your CodeHub Account",
-                    html: `
-                        ....
-                    `
-                });
+        await sendVerificationEmail({
+                to: email,
+                subject: "Verify Your Email",
+                html:  `
+                <h2>Welcome to CodeHub 🚀</h2>
 
-                console.log("Mail sent:", info.messageId);
+                <p>Hi ${user.firstName},</p>
 
-            } catch (err) {
+                <p>Thank you for registering on CodeHub.</p>
 
-                console.error("MAIL ERROR");
-                console.error(err);
+                <p>Please click the button below to verify your email address.</p>
 
-                return res.status(500).json({
-                    success:false,
-                    message:err.message
-                });
+                <a
+                    href="${verificationLink}"
+                    style="
+                        display:inline-block;
+                        padding:12px 20px;
+                        background:#2563eb;
+                        color:white;
+                        text-decoration:none;
+                        border-radius:8px;
+                        font-weight:bold;
+                    "
+                >
+                    Verify Email
+                </a>
 
-            }
+                <p style="margin-top:20px;">
+                    If you didn't create this account, you can safely ignore this email.
+                </p>
+            `
+            });
         console.log("8. After sendMail");
         console.log("9. Sending Response");
 
