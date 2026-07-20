@@ -69,7 +69,11 @@ const userSchema = new Schema({
         trim:true,
         maxlength: 300,
         default: "Passionate programmer exploring new technologies and solving problems."
-    }
+    },
+    sessionId: {
+    type: String,
+    default: null
+}
 },{
     timestamps:true
 });

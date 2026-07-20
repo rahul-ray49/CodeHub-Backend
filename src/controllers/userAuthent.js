@@ -151,6 +151,7 @@ const login=async(req,res)=>{
                     message: "Invalid credentials"
                  });
              }
+      const sessionId = crypto.randomUUID();
       const reply={
         firstName:user.firstName,
         emailId:user.emailId,
@@ -158,7 +159,9 @@ const login=async(req,res)=>{
         role:user.role,
         profileImage:user.profileImage
       };
-      const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role},process.env.JWT_SECRET,{expiresIn:60*60});
+      const token=jwt.sign({_id:user._id,emailId:user.emailId,role:user.role,sessionId},process.env.JWT_SECRET,{expiresIn:60*60});
+      user.sessionId = sessionId;
+      await user.save();
       res.cookie('token',token,{httpOnly:true, secure: process.env.NODE_ENV === "production",sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",maxAge:60*60*1000});
 
 
@@ -204,6 +207,15 @@ const logout=async(req,res)=>{
             message: "Invalid token"
         });
     }
+
+      const user = await User.findById(payload._id);
+
+        if (user) {
+            user.sessionId = null;
+            await user.save();
+        }
+
+      
 
 
       await redisClient.set(`token:${token}`,"blocked");

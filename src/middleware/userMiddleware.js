@@ -24,7 +24,7 @@ const userMiddleware=async(req,res,next)=>{
 
 
 
-        const {_id}=payload; 
+        const {_id,sessionId}=payload; 
         //_id ye woh wali id hai jo mongodb me user create karte time generate hoti hai, aur payload me humne _id aur emailId store kiya hai token create karte time
         
 
@@ -42,6 +42,13 @@ const userMiddleware=async(req,res,next)=>{
             return res.status(401).json({
                 success:false,
                 message:"User not found"
+            });
+        }
+
+        if (result.sessionId !== sessionId) {
+            return res.status(401).json({
+                success: false,
+                message: "Session expired. Logged in from another device."
             });
         }
 
