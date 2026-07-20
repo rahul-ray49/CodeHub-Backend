@@ -5,7 +5,6 @@ const jwt=require('jsonwebtoken');
 const redisClient=require('../config/redis');
 const Submission=require("../models/submission");
 const crypto=require("crypto");
-const transporter=require("../utils/sendMail");
 const cloudinary=require("../config/cloudinary");
 const fs=require("fs");
 const sendVerificationEmail = require("../utils/brevoMail");
@@ -49,7 +48,7 @@ const register = async (req, res) => {
         console.log(process.env.BREVO_PASS ? "PASS FOUND" : "PASS MISSING");
 
         await sendVerificationEmail({
-                to: email,
+                to: emailId,
                 subject: "Verify Your Email",
                 html:  `
                 <h2>Welcome to CodeHub 🚀</h2>
@@ -514,13 +513,12 @@ const resendVerificationEmail = async (req, res) => {
         await user.save();
 
         const verificationLink =
-            `${process.env.BACKEND_URL}/email/verify/${crypto_token}`;;
+            `${process.env.BACKEND_URL}/email/verify/${crypto_token}`;
 
-        await transporter.sendMail({
-            from: process.env.BREVO_EMAIL,
-            to: user.emailId,
-            subject: "Verify Your CodeHub Account",
-            html: `
+        await sendVerificationEmail({
+                to: user.emailId,
+                subject: "Verify Your Email",
+                html:  `
                 <h2>Welcome to CodeHub 🚀</h2>
 
                 <p>Hi ${user.firstName},</p>
@@ -548,8 +546,8 @@ const resendVerificationEmail = async (req, res) => {
                     If you didn't create this account, you can safely ignore this email.
                 </p>
             `
-        });
-
+            });
+        
         return res.status(200).json({
             success: true,
             message: "Verification email sent successfully."
