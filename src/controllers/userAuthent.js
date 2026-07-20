@@ -92,9 +92,9 @@ const register = async (req, res) => {
         console.error(err);
 
         if (
-            err.message === "Missing mandatory fields" ||
-            err.message === "Invalid email format" ||
-            err.message === "Password should be strong"
+            err.message === "invalid email" ||
+            err.message === "some fields missing" ||
+            err.message === "password should be strong"
         ) {
             return res.status(400).json({
                 success: false,
