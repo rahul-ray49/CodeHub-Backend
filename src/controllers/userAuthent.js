@@ -304,6 +304,7 @@ const deleteProfile=async(req,res)=>{
 
         //await Submission.deleteMany({userId});
         //iska alternate tarika bhi hai.
+        //need to delete submissions and all of the particular user
 
        return  res.status(200).json({
             success:true,
