@@ -292,32 +292,50 @@ const adminRegister=async(req,res)=>{
     }
 }
 
-const deleteProfile=async(req,res)=>{
-    try{
-        const userId=req.result._id;
-        //jo bhi delete request aaye req.result mai se User ki id nikalo mongoDB wali
+const deleteProfile = async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        const user = req.result;
 
-        await User.findByIdAndDelete(userId);
-        //isse id delete ho gayi
+        // Delete profile image
+        if (user.profileImage?.public_id) {
+            await cloudinary.uploader.destroy(user.profileImage.public_id);
+        }
 
-        //abb user ke related jitne bhi submission hai unhe bhi delete karna hoga so
+        // Block current token
+        await redisClient.set(
+            `token:${token}`,
+            "Blocked",
+            "EX",
+            60 * 60
+        );
 
-        //await Submission.deleteMany({userId});
-        //iska alternate tarika bhi hai.
-        //need to delete submissions and all of the particular user
+        // Delete user (post middleware will delete submissions)
+        await User.findByIdAndDelete(user._id);
 
-       return  res.status(200).json({
-            success:true,
-            message:"User Deleted Successfully"
-        }); 
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite:
+                process.env.NODE_ENV === "production"
+                    ? "none"
+                    : "lax",
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "User deleted successfully",
+        });
+
+    } catch (err) {
+        console.error(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+        });
     }
-    catch(err){
-       return  res.status(500).json({
-            success:false,
-            message:"Internal Server Error"
-        })
-    }
-}
+};
 
 
 
