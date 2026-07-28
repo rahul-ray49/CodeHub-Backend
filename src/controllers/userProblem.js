@@ -392,7 +392,7 @@ const getAllProblem = async(req,res)=>{
     const totalProblems = await Problem.countDocuments(filter);
 
      
-    const getProblem = await Problem.find(filter).select('_id title difficulty tags score problemNumber').skip((page-1)*limitVal).limit(limitVal);
+    const getProblem = await Problem.find(filter).select('_id title difficulty tags score problemNumber').sort({ problemNumber: 1 }).skip((page-1)*limitVal).limit(limitVal);
     //only these field will be shown when we will fetch all problems
 
 
@@ -447,7 +447,7 @@ const getAllProblem2 = async(req,res)=>{
     const totalProblems = await Problem.countDocuments(filter);
 
      
-    const getProblem = await Problem.find(filter).select('_id title difficulty tags score problemNumber').skip((page-1)*limitVal).limit(limitVal);
+    const getProblem = await Problem.find(filter).select('_id title difficulty tags score problemNumber').sort({ problemNumber: 1}).skip((page-1)*limitVal).limit(limitVal);
     //only these field will be shown when we will fetch all problems
 
 
